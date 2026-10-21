@@ -443,8 +443,22 @@
 
   // 버전·용량·날짜 — 못 읽으면 기본 문구 그대로
   const mb = (n) => `${Math.round(n / 1024 / 1024)}MB`;
+  const notReady = (btn) => {
+    btn.removeAttribute("href");
+    btn.classList.add("ghost");
+    btn.style.pointerEvents = "none";
+    btn.replaceChildren("준비 중");
+  };
   fetch(`https://api.github.com/repos/${RELEASE_REPO}/releases/latest`)
-    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then((r) => {
+      if (r.ok) return r.json();
+      // 아직 릴리스가 없을 때만 막는다 (요청 한도 초과 같은 실패는 버튼을 그대로 둔다)
+      if (r.status === 404) {
+        document.querySelectorAll("[data-asset]").forEach(notReady);
+        document.querySelector("[data-version]").textContent = "첫 버전을 준비하고 있습니다";
+      }
+      return Promise.reject();
+    })
     .then((rel) => {
       const date = new Date(rel.published_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
       document.querySelector("[data-version]").textContent = `최신 버전 ${rel.tag_name} · ${date}`;
@@ -452,13 +466,7 @@
         const asset = rel.assets.find((x) => x.name === name);
         const el = document.querySelector(`[data-size="${key}"]`);
         if (asset) el.textContent = mb(asset.size);
-        else {
-          const btn = el.closest(".btn");
-          btn.removeAttribute("href");
-          btn.classList.add("ghost");
-          btn.style.pointerEvents = "none";
-          btn.replaceChildren("준비 중");
-        }
+        else notReady(el.closest(".btn"));
       }
       const mine = os && rel.assets.find((x) => x.name === ASSETS[os]);
       if (mine) document.querySelector("[data-meta]").textContent = `${rel.tag_name} · ${mb(mine.size)} · 설치 후 Claude 또는 ChatGPT 계정으로 로그인`;
