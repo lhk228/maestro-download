@@ -400,7 +400,7 @@
       </details>
       <details>
         <summary>macOS 에서 "확인되지 않은 개발자" 라며 열리지 않아요</summary>
-        <p>앱을 오른쪽 클릭(또는 Control+클릭) → '열기' → 다시 '열기'를 누르면 됩니다. 한 번만 허락하면 다음부터는 바로 열립니다. 안 되면 시스템 설정 → 개인정보 보호 및 보안 아래쪽의 '그래도 열기'를 누르세요.</p>
+        <p>Apple 공증을 받지 않은 앱이라 처음 한 번은 직접 허락해야 합니다. 경고 창에서 '완료'를 누르고(휴지통으로 옮기지 마세요), Maestro 를 응용 프로그램 폴더로 옮긴 뒤 한 번 실행합니다. 그다음 시스템 설정 → 개인정보 보호 및 보안 맨 아래의 '그래도 열기'를 누르면 됩니다. 터미널이 편하면 <code>xattr -dr com.apple.quarantine /Applications/Maestro.app</code> 한 줄로도 풀립니다.</p>
       </details>
       <details>
         <summary>Windows 에서 "PC 보호" 창이 떠요</summary>
