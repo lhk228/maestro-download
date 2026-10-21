@@ -455,6 +455,7 @@
       // 아직 릴리스가 없을 때만 막는다 (요청 한도 초과 같은 실패는 버튼을 그대로 둔다)
       if (r.status === 404) {
         document.querySelectorAll("[data-asset]").forEach(notReady);
+        document.querySelector("[data-primary]").href = "#download";
         document.querySelector("[data-version]").textContent = "첫 버전을 준비하고 있습니다";
       }
       return Promise.reject();
