@@ -1,0 +1,475 @@
+<!doctype html>
+<!--
+  마에스트로 소개·다운로드 페이지 (한 장짜리 정적 페이지)
+  - 이 폴더(site/)를 그대로 정적 호스팅(GitHub Pages 등)에 올린다. 빌드 없음.
+  - 설치 파일은 공개 저장소의 GitHub Releases 에 올리고, 아래 RELEASE_REPO 만 맞추면 된다.
+    파일 이름은 늘 같게 둔다 → '최신 버전' 주소(releases/latest/download/<이름>)가 바뀌지 않는다.
+  - 버전·용량·날짜는 GitHub API 로 읽어 채우고, 못 읽으면 기본 문구 그대로 둔다.
+  - 회사 프로젝트 이름·화면 캡처를 넣지 않는다 (아래 화면 그림은 가짜 데이터).
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>마에스트로 — 모든 프로젝트를 한 화면에서, AI 에게 일을 맡기는 업무 대시보드</title>
+<meta name="description" content="흩어진 프로젝트·대화·할 일을 한 화면에 모으고, 버튼 하나로 AI 에게 일을 맡기는 내 PC 전용 업무 대시보드. macOS · Windows." />
+<meta property="og:title" content="마에스트로" />
+<meta property="og:description" content="모든 프로젝트를 한 화면에서 내려다보고, AI 에게 일을 맡기는 업무 대시보드" />
+<meta property="og:image" content="icon.png" />
+<meta name="theme-color" content="#070b1a" />
+<link rel="icon" href="icon.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<style>
+  :root {
+    --c1: #6366f1;
+    --c2: #8b5cf6;
+    --grad-brand: linear-gradient(135deg, var(--c1), var(--c2));
+    --bg: #070b1a;
+    --panel: rgb(15 21 44 / 0.66);
+    --ink: #eef1ff;
+    --muted: #a4acc8;
+    --faint: #6c7493;
+    --accent: color-mix(in srgb, var(--c2) 62%, white);
+    --accent-bg: color-mix(in srgb, var(--c1) 22%, transparent);
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --bad: #fb7185;
+    --fill-1: rgb(255 255 255 / 0.055);
+    --fill-1b: rgb(255 255 255 / 0.025);
+    --edge-hi: rgb(255 255 255 / 0.26);
+    --edge-lo: rgb(255 255 255 / 0.03);
+    --shadow: 0 12px 34px -14px rgb(0 0 0 / 0.6);
+    --dur-hover: 280ms;
+    --dur-pop: 260ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    word-break: keep-all;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  a, button { transition: all var(--dur-hover) var(--ease-out); }
+
+  /* 배경 빛 덩어리 */
+  .blobs { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .blobs i { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.5; animation: drift 22s ease-in-out infinite alternate; }
+  .blobs i:nth-child(1) { width: 560px; height: 560px; left: -140px; top: -160px; background: var(--c1); }
+  .blobs i:nth-child(2) { width: 480px; height: 480px; right: -160px; top: 220px; background: var(--c2); animation-duration: 28s; }
+  .blobs i:nth-child(3) { width: 420px; height: 420px; left: 30%; top: 900px; background: #14b8a6; opacity: 0.22; animation-duration: 34s; }
+  @keyframes drift { to { transform: translate(60px, 40px) scale(1.08); } }
+
+  /* 유리 면 — 단색 테두리 대신 위는 밝고 아래는 흐린 그라데이션 테두리 */
+  .glass {
+    position: relative;
+    background: linear-gradient(180deg, var(--fill-1), var(--fill-1b)), var(--panel);
+    backdrop-filter: blur(18px) saturate(1.3);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+  }
+  .glass::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: linear-gradient(180deg, var(--edge-hi), var(--edge-lo));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+
+  .wrap { width: min(1120px, 100% - 40px); margin: 0 auto; }
+
+  /* 머리 */
+  header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgb(7 11 26 / 0.55); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+  .logo img { width: 30px; height: 30px; border-radius: 8px; transition: transform var(--dur-hover) var(--ease-out); }
+  .logo:hover img { transform: rotate(-6deg) scale(1.06); }
+  nav { display: flex; gap: 6px; }
+  nav a { padding: 8px 14px; border-radius: 10px; color: var(--muted); font-size: 14px; }
+  nav a:hover { color: var(--ink); background: var(--fill-1); }
+
+  /* 버튼 */
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 22px; border-radius: 14px; border: 0; cursor: pointer;
+    font: inherit; font-weight: 600; font-size: 16px; color: #fff;
+    position: relative; isolation: isolate; overflow: hidden;
+    background: var(--grad-brand);
+    box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--c1) 70%, transparent);
+  }
+  .btn::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(135deg, var(--c2), var(--c1)); opacity: 0; transition: opacity var(--dur-hover) var(--ease-out); }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -12px color-mix(in srgb, var(--c2) 80%, transparent); }
+  .btn:hover::before { opacity: 1; }
+  .btn:active { transform: scale(0.97); }
+  .btn.ghost { background: var(--fill-1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); color: var(--ink); }
+  .btn.ghost::before { background: rgb(255 255 255 / 0.08); }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .btn small { font-weight: 400; opacity: 0.75; font-size: 13px; }
+
+  /* 첫 화면 */
+  .hero { padding: 88px 0 40px; text-align: center; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--accent-bg); color: var(--accent); font-size: 13px; font-weight: 600; }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: pulse 2s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+  h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1.15; letter-spacing: -0.035em; margin: 22px 0 18px; font-weight: 800; }
+  h1 .g { background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; filter: brightness(1.35); }
+  .lead { font-size: clamp(16px, 2vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto 34px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .meta { margin-top: 16px; color: var(--faint); font-size: 13px; }
+
+  /* 화면 그림 (가짜 데이터) */
+  .shot { margin: 64px auto 0; padding: 14px; max-width: 1000px; text-align: left; }
+  .shot .bar { display: flex; gap: 7px; padding: 4px 6px 14px; }
+  .shot .bar i { width: 11px; height: 11px; border-radius: 50%; background: rgb(255 255 255 / 0.14); }
+  .shot .bar i:nth-child(1) { background: #fb7185; } .shot .bar i:nth-child(2) { background: #fbbf24; } .shot .bar i:nth-child(3) { background: #34d399; }
+  .shot .body { display: grid; grid-template-columns: 170px 1fr 250px; gap: 12px; font-size: 12.5px; }
+  .side, .col, .chat { background: rgb(255 255 255 / 0.035); border-radius: 14px; padding: 12px; }
+  .side b, .col b, .chat b { display: block; font-size: 11px; color: var(--faint); font-weight: 600; margin: 4px 4px 8px; letter-spacing: 0.02em; }
+  .side span { display: block; padding: 7px 8px; border-radius: 8px; color: var(--muted); }
+  .side span.on { background: var(--accent-bg); color: var(--accent); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+  .stat { background: rgb(255 255 255 / 0.04); border-radius: 12px; padding: 10px 12px; }
+  .stat em { display: block; font-style: normal; font-size: 26px; font-weight: 800; background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; filter: brightness(1.4); line-height: 1.2; }
+  .stat small { color: var(--faint); font-size: 11px; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { background: rgb(255 255 255 / 0.045); border-radius: 12px; padding: 10px 12px; }
+  .card strong { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .card p { margin: 4px 0 8px; color: var(--faint); font-size: 11.5px; }
+  .tag { font-size: 10.5px; padding: 2px 7px; border-radius: 999px; background: rgb(52 211 153 / 0.14); color: var(--ok); }
+  .tag.w { background: rgb(251 191 36 / 0.14); color: var(--warn); }
+  .prog { height: 4px; border-radius: 4px; background: rgb(255 255 255 / 0.07); overflow: hidden; }
+  .prog i { display: block; height: 100%; background: var(--grad-brand); border-radius: inherit; }
+  .msg { padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; background: rgb(255 255 255 / 0.05); color: var(--muted); }
+  .msg.me { background: var(--accent-bg); color: var(--ink); margin-left: 24px; }
+  .msg.ask { background: rgb(251 191 36 / 0.1); color: var(--ink); }
+  .msg.ask u { text-decoration: none; display: inline-block; margin-top: 6px; padding: 3px 9px; border-radius: 7px; background: var(--grad-brand); color: #fff; font-size: 11px; }
+
+  /* 기능 */
+  section { padding: 96px 0 0; }
+  .eyebrow { color: var(--accent); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  h2 { font-size: clamp(26px, 3.6vw, 38px); letter-spacing: -0.03em; line-height: 1.25; margin: 10px 0 14px; }
+  .sub { color: var(--muted); margin: 0 0 40px; max-width: 620px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .feat { padding: 26px; transition: transform var(--dur-pop) var(--ease-out), box-shadow var(--dur-pop) var(--ease-out); }
+  .feat:hover { transform: translateY(-4px); box-shadow: 0 24px 50px -20px rgb(0 0 0 / 0.7); }
+  .feat .ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-bg); color: var(--accent); margin-bottom: 16px; transition: transform var(--dur-pop) var(--ease-out); }
+  .feat:hover .ic { transform: scale(1.08) rotate(-4deg); }
+  .feat .ic svg { width: 22px; height: 22px; }
+  .feat h3 { margin: 0 0 6px; font-size: 17px; letter-spacing: -0.01em; }
+  .feat p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  /* 엔진 */
+  .engines { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .engine { padding: 28px; display: flex; gap: 18px; align-items: flex-start; }
+  .engine .mark { width: 48px; height: 48px; border-radius: 14px; flex: none; display: grid; place-items: center; font-weight: 800; font-size: 18px; color: #fff; }
+  .engine h3 { margin: 0 0 4px; font-size: 18px; }
+  .engine p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  /* 다운로드 */
+  .dl { padding: 44px; text-align: center; }
+  .dl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 30px 0 8px; text-align: left; }
+  .os { padding: 24px; border-radius: 16px; background: rgb(255 255 255 / 0.04); display: flex; flex-direction: column; gap: 14px; transition: background var(--dur-hover) var(--ease-out), box-shadow var(--dur-hover) var(--ease-out); }
+  .os.mine { background: var(--accent-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c2) 45%, transparent); }
+  .os header { all: unset; display: flex; align-items: center; gap: 12px; }
+  .os header svg { width: 30px; height: 30px; }
+  .os h3 { margin: 0; font-size: 18px; }
+  .os .req { color: var(--faint); font-size: 13px; margin: 0; }
+  .os .btn { justify-content: center; }
+  .os .here { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--accent); opacity: 0; transition: opacity var(--dur-hover) var(--ease-out); }
+  .os.mine .here { opacity: 1; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; text-align: left; }
+  .step { padding: 22px; border-radius: 16px; background: rgb(255 255 255 / 0.035); }
+  .step .n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--grad-brand); font-weight: 700; font-size: 14px; margin-bottom: 12px; }
+  .step h4 { margin: 0 0 4px; font-size: 15.5px; }
+  .step p { margin: 0; color: var(--muted); font-size: 14px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; padding: 1px 6px; border-radius: 6px; background: rgb(255 255 255 / 0.08); }
+
+  /* 자주 묻는 것 */
+  .faq { display: grid; gap: 10px; max-width: 800px; }
+  details { border-radius: 14px; background: rgb(255 255 255 / 0.035); padding: 0 20px; transition: background var(--dur-hover) var(--ease-out); }
+  details:hover, details[open] { background: rgb(255 255 255 / 0.06); }
+  summary { cursor: pointer; list-style: none; padding: 18px 0; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--faint); font-size: 22px; font-weight: 300; transition: transform var(--dur-pop) var(--ease-out); }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  details::details-content { block-size: 0; overflow: hidden; transition: block-size var(--dur-pop) var(--ease-out), content-visibility var(--dur-pop) allow-discrete; }
+  details[open]::details-content { block-size: auto; }
+  @supports (interpolate-size: allow-keywords) { :root { interpolate-size: allow-keywords; } }
+
+  footer { padding: 80px 0 48px; color: var(--faint); font-size: 13px; text-align: center; }
+
+  /* 나타나기 */
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 880px) {
+    nav { display: none; }
+    .grid, .steps { grid-template-columns: 1fr; }
+    .engines, .dl-grid { grid-template-columns: 1fr; }
+    .shot .body { grid-template-columns: 1fr; }
+    .side, .chat { display: none; }
+    .dl { padding: 28px 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition-duration: 1ms !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="blobs"><i></i><i></i><i></i></div>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="#"><img src="icon.png" alt="" />마에스트로</a>
+    <nav>
+      <a href="#features">기능</a>
+      <a href="#engines">AI 엔진</a>
+      <a href="#download">다운로드</a>
+      <a href="#faq">자주 묻는 것</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero wrap">
+    <span class="pill"><span class="dot"></span>macOS · Windows 지원</span>
+    <h1>모든 프로젝트를 한 화면에서.<br /><span class="g">일은 AI 에게 맡기세요.</span></h1>
+    <p class="lead">흩어진 프로젝트·대화·할 일을 한 대시보드에 모으고, 버튼 하나로 리서치·문서화·주간보고까지 AI 에게 맡깁니다. 모든 데이터는 내 PC 에만 남습니다.</p>
+    <div class="cta">
+      <a class="btn" href="#download" data-primary>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
+        <span data-primary-label>무료로 다운로드</span>
+      </a>
+      <a class="btn ghost" href="#features">무엇을 하나요?</a>
+    </div>
+    <p class="meta" data-meta>설치 파일 약 60MB · 설치 후 Claude 또는 ChatGPT 계정으로 로그인</p>
+
+    <div class="shot glass reveal" aria-hidden="true">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="body">
+        <div class="side">
+          <b>업무</b>
+          <span class="on">대시보드</span><span>업무현황</span><span>산출물</span>
+          <b style="margin-top:14px">프로젝트</b>
+          <span>신규 웹 리뉴얼</span><span>모바일 앱</span><span>사내 도구</span>
+        </div>
+        <div class="col">
+          <div class="stats">
+            <div class="stat"><em>7</em><small>진행 중 프로젝트</small></div>
+            <div class="stat"><em>3</em><small>AI 작업 중</small></div>
+            <div class="stat"><em>2</em><small>내 결정 대기</small></div>
+          </div>
+          <div class="cards">
+            <div class="card"><strong>신규 웹 리뉴얼 <span class="tag">진행</span></strong><p>메인 화면 시안 반영 · 커밋 12</p><div class="prog"><i style="width:68%"></i></div></div>
+            <div class="card"><strong>모바일 앱 <span class="tag w">결정 필요</span></strong><p>로그인 방식 선택을 기다리는 중</p><div class="prog"><i style="width:42%"></i></div></div>
+            <div class="card"><strong>사내 도구 <span class="tag">진행</span></strong><p>주간업무보고 초안 완성</p><div class="prog"><i style="width:85%"></i></div></div>
+            <div class="card"><strong>데이터 정리 <span class="tag">유지보수</span></strong><p>오류 문구 수정 배포</p><div class="prog"><i style="width:96%"></i></div></div>
+          </div>
+        </div>
+        <div class="chat">
+          <b>AI 채팅 · 모바일 앱</b>
+          <div class="msg me">로그인 화면 오류 문구 고쳐 줘</div>
+          <div class="msg">세 군데를 고쳤습니다. 화면에서 확인해 주세요.</div>
+          <div class="msg ask">소셜 로그인을 먼저 붙일까요?<br /><u>계속 진행</u></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="features" class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">기능</div>
+      <h2>프로젝트가 많을수록 편해집니다</h2>
+      <p class="sub">여러 프로젝트를 동시에 맡는 사람을 위해 만들었습니다. 보는 화면은 파일·git·GitHub 에서 바로 읽어 토큰을 쓰지 않고, AI 는 내가 말을 걸 때만 움직입니다.</p>
+    </div>
+    <div class="grid">
+      <div class="feat glass reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg></div>
+        <h3>한 화면 대시보드</h3>
+        <p>모든 프로젝트의 상태·최근 커밋·할 일을 보드 하나로 봅니다. 끌어서 옮기고 접어 둘 수 있습니다.</p>
+      </div>
+      <div class="feat glass reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg></div>
+        <h3>프로젝트마다 AI 채팅</h3>
+        <p>프로젝트 폴더를 아는 AI 에게 바로 일을 맡깁니다. 코드 수정, 파일 작업, 캡처·파일 첨부까지.</p>
+      </div>
+      <div class="feat glass reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></div>
+        <h3>결정 대기 · 다음 할 일</h3>
+        <p>AI 가 허락이나 답을 기다리면 한곳에 모아 알려 줍니다. '계속 진행' 한 번이면 이어서 일합니다.</p>
+      </div>
+      <div class="feat glass reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div>
+        <h3>업무현황 · 주간업무보고</h3>
+        <p>대화 하나가 업무 하나. 끝낸 업무와 커밋을 모아 주간업무보고를 버튼 하나로 씁니다.</p>
+      </div>
+      <div class="feat glass reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div>
+        <h3>리서치 · 문서화</h3>
+        <p>리서치·브리핑을 맡기고, 결과를 A4 보고서(PDF)나 발표자료(PPTX)로 내보냅니다.</p>
+      </div>
+      <div class="feat glass reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3>내 PC 에서만</h3>
+        <p>서버가 내 컴퓨터 안에서만 돕니다. 대화 기록·산출물은 밖으로 나가지 않습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="engines" class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">AI 엔진</div>
+      <h2>쓰던 AI 계정 그대로</h2>
+      <p class="sub">별도 API 키 없이, 이미 쓰고 있는 구독 계정으로 로그인합니다. 대화마다 엔진을 고를 수 있습니다.</p>
+    </div>
+    <div class="engines">
+      <div class="engine glass reveal">
+        <div class="mark" style="background:linear-gradient(135deg,#d97757,#b4532f)">C</div>
+        <div><h3>Claude</h3><p>Claude Pro · Max 계정으로 로그인. 작업 전 허락을 묻는 결정 카드, 대화 되돌리기·나누기·압축을 지원합니다.</p></div>
+      </div>
+      <div class="engine glass reveal">
+        <div class="mark" style="background:linear-gradient(135deg,#10a37f,#0b7a5e)">G</div>
+        <div><h3>GPT</h3><p>ChatGPT 계정으로 로그인. 작업 범위(읽기 전용·폴더 안 쓰기 등)를 정해 두고 맡깁니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download" class="wrap">
+    <div class="dl glass reveal">
+      <div class="eyebrow">다운로드</div>
+      <h2>지금 설치하세요</h2>
+      <p class="sub" style="margin:0 auto" data-version>최신 버전 · 설치 파일 약 60MB</p>
+
+      <div class="dl-grid">
+        <div class="os" data-os="mac">
+          <header>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.5 2-3.7 2.1-3.8-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.8-1-2.9-4.1ZM13.9 5.1c.7-.8 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4Z"/></svg>
+            <h3>macOS</h3><span class="here">이 컴퓨터</span>
+          </header>
+          <p class="req">Apple Silicon(M1 이상) · macOS 13 이상 · .dmg</p>
+          <a class="btn" data-asset="mac" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
+            macOS 용 다운로드 <small data-size="mac"></small>
+          </a>
+        </div>
+        <div class="os" data-os="win">
+          <header>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10 4.5v7H3v-6Zm8-1.2L21 3v8.5H11V4.3ZM3 12.5h7v7L3 18.5v-6Zm8 0h10V21l-10-1.4v-7.1Z"/></svg>
+            <h3>Windows</h3><span class="here">이 컴퓨터</span>
+          </header>
+          <p class="req">Windows 10 · 11 (64비트) · .exe</p>
+          <a class="btn" data-asset="win" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
+            Windows 용 다운로드 <small data-size="win"></small>
+          </a>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step"><div class="n">1</div><h4>설치</h4><p>내려받은 파일을 열어 설치합니다. 처음 실행하면 필요한 구성 요소를 알아서 준비합니다.</p></div>
+        <div class="step"><div class="n">2</div><h4>로그인</h4><p>Claude 또는 ChatGPT 계정으로 로그인합니다. 둘 다 연결해 두고 대화마다 골라 써도 됩니다.</p></div>
+        <div class="step"><div class="n">3</div><h4>프로젝트 추가</h4><p>작업 폴더를 고르면 카드가 생깁니다. 이제 대시보드에서 모든 프로젝트를 내려다보세요.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">자주 묻는 것</div>
+      <h2>궁금한 점</h2>
+    </div>
+    <div class="faq reveal">
+      <details>
+        <summary>요금이 드나요?</summary>
+        <p>마에스트로 자체는 무료입니다. AI 는 내가 쓰고 있는 Claude 또는 ChatGPT 구독 한도 안에서 돕니다. 대시보드처럼 보기만 하는 화면은 AI 를 부르지 않아 사용량을 쓰지 않습니다.</p>
+      </details>
+      <details>
+        <summary>내 코드와 대화가 어디로 가나요?</summary>
+        <p>마에스트로 서버는 내 컴퓨터(127.0.0.1)에서만 돌고 바깥에서는 접속할 수 없습니다. 대화 기록·산출물은 내 PC 에 저장됩니다. AI 에게 보낸 내용만 내가 로그인한 AI 서비스(Anthropic 또는 OpenAI)로 전달됩니다.</p>
+      </details>
+      <details>
+        <summary>macOS 에서 "확인되지 않은 개발자" 라며 열리지 않아요</summary>
+        <p>앱을 오른쪽 클릭(또는 Control+클릭) → '열기' → 다시 '열기'를 누르면 됩니다. 한 번만 허락하면 다음부터는 바로 열립니다. 안 되면 시스템 설정 → 개인정보 보호 및 보안 아래쪽의 '그래도 열기'를 누르세요.</p>
+      </details>
+      <details>
+        <summary>Windows 에서 "PC 보호" 창이 떠요</summary>
+        <p>창의 '추가 정보'를 누른 뒤 '실행'을 누르면 설치가 이어집니다.</p>
+      </details>
+      <details>
+        <summary>업데이트는 어떻게 하나요?</summary>
+        <p>설정 → 마에스트로 업데이트에서 새 버전을 확인하고 바로 받을 수 있습니다.</p>
+      </details>
+      <details>
+        <summary>Intel 맥에서도 되나요?</summary>
+        <p>지금은 Apple Silicon(M1 이상) 맥만 지원합니다.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>마에스트로 · 내 PC 에서 도는 개인 업무 대시보드</p>
+  <p>Claude 는 Anthropic, ChatGPT 는 OpenAI 의 상표입니다. 마에스트로는 두 회사와 관계없는 개인 프로젝트입니다.</p>
+</footer>
+
+<script>
+  // 설치 파일을 올리는 공개 저장소와 파일 이름 — 릴리스마다 같은 이름으로 올린다
+  const RELEASE_REPO = "lhk228/maestro-download";
+  const ASSETS = { mac: "Maestro-mac-arm64.dmg", win: "Maestro-windows-x64.exe" };
+  const latest = (name) => `https://github.com/${RELEASE_REPO}/releases/latest/download/${name}`;
+
+  for (const a of document.querySelectorAll("[data-asset]")) a.href = latest(ASSETS[a.dataset.asset]);
+
+  // 이 컴퓨터에 맞는 쪽을 강조하고, 첫 화면 버튼도 그 파일로 바로 받게 한다
+  const ua = navigator.userAgent;
+  const os = /Windows/i.test(ua) ? "win" : /Macintosh|Mac OS X/i.test(ua) ? "mac" : null;
+  if (os) {
+    document.querySelector(`.os[data-os="${os}"]`).classList.add("mine");
+    const primary = document.querySelector("[data-primary]");
+    primary.href = latest(ASSETS[os]);
+    document.querySelector("[data-primary-label]").textContent = os === "mac" ? "macOS 용 다운로드" : "Windows 용 다운로드";
+  }
+
+  // 버전·용량·날짜 — 못 읽으면 기본 문구 그대로
+  const mb = (n) => `${Math.round(n / 1024 / 1024)}MB`;
+  fetch(`https://api.github.com/repos/${RELEASE_REPO}/releases/latest`)
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then((rel) => {
+      const date = new Date(rel.published_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+      document.querySelector("[data-version]").textContent = `최신 버전 ${rel.tag_name} · ${date}`;
+      for (const [key, name] of Object.entries(ASSETS)) {
+        const asset = rel.assets.find((x) => x.name === name);
+        const el = document.querySelector(`[data-size="${key}"]`);
+        if (asset) el.textContent = mb(asset.size);
+        else {
+          const btn = el.closest(".btn");
+          btn.removeAttribute("href");
+          btn.classList.add("ghost");
+          btn.style.pointerEvents = "none";
+          btn.replaceChildren("준비 중");
+        }
+      }
+      const mine = os && rel.assets.find((x) => x.name === ASSETS[os]);
+      if (mine) document.querySelector("[data-meta]").textContent = `${rel.tag_name} · ${mb(mine.size)} · 설치 후 Claude 또는 ChatGPT 계정으로 로그인`;
+    })
+    .catch(() => {});
+
+  // 스크롤하면 스르르 나타나기
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+  }, { threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+</script>
+</body>
+</html>
