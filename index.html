@@ -183,10 +183,10 @@
   .os header svg { width: 30px; height: 30px; }
   .os h3 { margin: 0; font-size: 18px; }
   .os .req { color: var(--faint); font-size: 13px; margin: 0; }
-  .os .btn { justify-content: center; }
+  .os .btn { justify-content: center; margin-top: auto; }
   .cmd { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgb(0 0 0 / 0.28); }
-  /* 긴 명령은 줄을 바꿔 다 보이게 — 그리드 칸(.os)이 내용 너비로 늘어나 상자 밖으로 삐져나가지 않게 min-width: 0 */
-  .cmd code { flex: 1; min-width: 0; white-space: normal; word-break: break-all; line-height: 1.5; background: none; padding: 0; font-size: 12.5px; color: var(--ink); }
+  /* 명령은 한 줄로, 넘치면 … — 복사 버튼이 전체를 복사한다. 칸(.os)이 내용 너비로 늘어나지 않게 min-width: 0 */
+  .cmd code { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; background: none; padding: 0; font-size: 12.5px; color: var(--ink); }
   .cmd button { flex: none; border: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 8px; color: var(--accent); background: var(--accent-bg); }
   .cmd button:hover { filter: brightness(1.25); }
   .os .how { margin: 0; font-size: 12.5px; color: var(--muted); }
@@ -227,6 +227,7 @@
     .side, .chat { display: none; }
     .dl { padding: 28px 20px; }
   }
+  @media (max-width: 480px) { .os .btn small { display: none; } }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition-duration: 1ms !important; }
     .reveal { opacity: 1; transform: none; }
@@ -365,7 +366,7 @@
             <h3>macOS</h3><span class="here">이 컴퓨터</span>
           </header>
           <p class="req">Apple Silicon(M1 이상) · macOS 13 이상</p>
-          <p class="how"><b>권장 — 터미널에 붙여넣기</b> (보안 경고 없이 설치·실행. 터미널은 Spotlight 에서 &lsquo;터미널&rsquo;)</p>
+          <p class="how"><b>권장 — 터미널에 붙여넣기</b> · 보안 경고 없이 설치</p>
           <div class="cmd"><code>curl -fsSL https://lhk228.github.io/maestro-download/install.sh | zsh</code><button type="button" data-copy>복사</button></div>
           <p class="or">또는 설치 파일(.dmg) 직접 받기</p>
           <a class="btn ghost" data-asset="mac" href="#">
@@ -379,9 +380,9 @@
             <h3>Windows</h3><span class="here">이 컴퓨터</span>
           </header>
           <p class="req">Windows 10 · 11 (64비트)</p>
-          <p class="how"><b>권장 — PowerShell 에 붙여넣기</b> (다운로드 차단·PC 보호 창 없이. 시작 메뉴에서 &lsquo;PowerShell&rsquo;)</p>
+          <p class="how"><b>권장 — PowerShell 에 붙여넣기</b> · 차단·경고 창 없이 설치</p>
           <div class="cmd"><code>iex ((New-Object Net.WebClient).DownloadString('https://lhk228.github.io/maestro-download/install.ps1'))</code><button type="button" data-copy>복사</button></div>
-          <p class="or">또는 설치 파일(.exe) 직접 받기 — 브라우저가 막으면 &lsquo;유지&rsquo;·&lsquo;계속&rsquo;</p>
+          <p class="or">또는 설치 파일(.exe) 직접 받기</p>
           <a class="btn ghost" data-asset="win" href="#">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
             Windows 용 다운로드 <small data-size="win"></small>
