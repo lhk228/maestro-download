@@ -368,7 +368,7 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10 4.5v7H3v-6Zm8-1.2L21 3v8.5H11V4.3ZM3 12.5h7v7L3 18.5v-6Zm8 0h10V21l-10-1.4v-7.1Z"/></svg>
             <h3>Windows</h3><span class="here">이 컴퓨터</span>
           </header>
-          <p class="req">Windows 10 · 11 (64비트) · .exe</p>
+          <p class="req">Windows 10 · 11 (64비트) · .exe — 브라우저가 막으면 '유지'·'계속'을 눌러 받으세요</p>
           <a class="btn" data-asset="win" href="#">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
             Windows 용 다운로드 <small data-size="win"></small>
@@ -400,11 +400,13 @@
       </details>
       <details>
         <summary>macOS 에서 "확인되지 않은 개발자" 라며 열리지 않아요</summary>
-        <p>Apple 공증을 받지 않은 앱이라 처음 한 번은 직접 허락해야 합니다. 경고 창에서 '완료'를 누르고(휴지통으로 옮기지 마세요), Maestro 를 응용 프로그램 폴더로 옮긴 뒤 한 번 실행합니다. 그다음 시스템 설정 → 개인정보 보호 및 보안 맨 아래의 '그래도 열기'를 누르면 됩니다. 터미널이 편하면 <code>xattr -dr com.apple.quarantine /Applications/Maestro.app</code> 한 줄로도 풀립니다.</p>
+        <p>Apple 공증을 받지 않은 앱이라 처음 한 번은 직접 허락해야 합니다. 경고 창에서 '완료'를 누르고(휴지통으로 옮기지 마세요), Maestro 를 <b>응용 프로그램 폴더로 옮긴 뒤</b> 한 번 실행합니다. 그다음 시스템 설정 → 개인정보 보호 및 보안 맨 아래의 '그래도 열기'를 누르면 됩니다. 앱을 한 번 허락하면 첫 설치 창까지 그대로 이어집니다. 터미널이 편하면 <code>xattr -dr com.apple.quarantine /Applications/Maestro.app</code> 한 줄로도 풀립니다.</p>
       </details>
       <details>
-        <summary>Windows 에서 "PC 보호" 창이 떠요</summary>
-        <p>창의 '추가 정보'를 누른 뒤 '실행'을 누르면 설치가 이어집니다.</p>
+        <summary>Windows 에서 다운로드가 막히거나 "PC 보호" 창이 떠요</summary>
+        <p>서명하지 않은 설치 파일이라 처음엔 브라우저와 Windows 가 한 번씩 막습니다.</p>
+        <p><b>Chrome</b> — 다운로드 목록의 경고에서 '계속'(또는 '다운로드')을 누릅니다. <b>Edge</b> — 다운로드 창에서 파일 옆 '…' → '유지' → '자세히 표시' → '그래도 유지'를 누릅니다.</p>
+        <p>설치 파일을 열 때 "Windows의 PC 보호" 창이 뜨면 '추가 정보' → '실행'을 누르면 설치가 이어집니다.</p>
       </details>
       <details>
         <summary>업데이트는 어떻게 하나요?</summary>
