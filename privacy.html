@@ -41,9 +41,9 @@ footer a{color:var(--faint)}
 
 <h2>1. Google 로그인으로 확인하는 정보</h2>
 <ul>
-  <li>앱은 허용된 조직(회사) 계정의 사람만 쓸 수 있도록 Google 로그인을 사용합니다.</li>
-  <li>요청하는 권한은 <b>openid · email</b> 뿐입니다. 이를 통해 <b>이메일 주소, 이메일 인증 여부, 조직 도메인</b>만 확인합니다.</li>
-  <li>확인 목적은 &lsquo;허용된 조직 계정인지&rsquo; 판단하는 것 하나입니다. Gmail·드라이브·캘린더 등 다른 Google 데이터에는 이 로그인으로 접근하지 않습니다.</li>
+  <li>앱은 개발자가 허용한 사람만 쓸 수 있도록 Google 로그인을 사용합니다.</li>
+  <li>요청하는 권한은 <b>openid · email</b> 뿐입니다. 이를 통해 <b>이메일 주소와 이메일 인증 여부</b>만 확인합니다.</li>
+  <li>확인 목적은 &lsquo;허용된 계정으로 로그인했는지&rsquo; 판단하는 것 하나입니다. Gmail·드라이브·캘린더 등 다른 Google 데이터에는 이 로그인으로 접근하지 않습니다.</li>
   <li>Google 이 발급한 토큰은 확인 직후 버리고 저장하지 않습니다. 로그인 상태는 사용자 PC 에 서명된 쿠키(이메일 주소 포함, 30일)로만 남습니다.</li>
 </ul>
 
@@ -73,7 +73,7 @@ footer a{color:var(--faint)}
 
 <section class="en">
 <h2>Summary (English)</h2>
-<p>Maestro is a desktop app that runs only on the user's own computer; the developer operates no server that receives user data. Google Sign-In (scopes: <b>openid, email</b>) is used solely to confirm that the user belongs to an allowed organization domain. Tokens are discarded right after the check; only a signed local cookie (email, 30 days) is kept on the user's machine. No data is sent to the developer or sold/shared with third parties. Maestro's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements. Contact: <a href="mailto:dpfvpsflxm1@gmail.com">dpfvpsflxm1@gmail.com</a></p>
+<p>Maestro is a desktop app that runs only on the user's own computer; the developer operates no server that receives user data. Google Sign-In (scopes: <b>openid, email</b>) is used solely to confirm that the user signed in with an allowed Google account. Tokens are discarded right after the check; only a signed local cookie (email, 30 days) is kept on the user's machine. No data is sent to the developer or sold/shared with third parties. Maestro's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements. Contact: <a href="mailto:dpfvpsflxm1@gmail.com">dpfvpsflxm1@gmail.com</a></p>
 </section>
 
 </div>
