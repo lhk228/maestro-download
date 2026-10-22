@@ -184,6 +184,12 @@
   .os h3 { margin: 0; font-size: 18px; }
   .os .req { color: var(--faint); font-size: 13px; margin: 0; }
   .os .btn { justify-content: center; }
+  .cmd { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgb(0 0 0 / 0.28); }
+  .cmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; background: none; padding: 0; font-size: 12.5px; color: var(--ink); }
+  .cmd button { flex: none; border: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 8px; color: var(--accent); background: var(--accent-bg); }
+  .cmd button:hover { filter: brightness(1.25); }
+  .os .how { margin: 0; font-size: 12.5px; color: var(--muted); }
+  .os .or { margin: 2px 0 0; font-size: 12px; color: var(--faint); text-align: center; }
   .os .here { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--accent); opacity: 0; transition: opacity var(--dur-hover) var(--ease-out); }
   .os.mine .here { opacity: 1; }
   .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; text-align: left; }
@@ -357,8 +363,11 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.5 2-3.7 2.1-3.8-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.8-1-2.9-4.1ZM13.9 5.1c.7-.8 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4Z"/></svg>
             <h3>macOS</h3><span class="here">이 컴퓨터</span>
           </header>
-          <p class="req">Apple Silicon(M1 이상) · macOS 13 이상 · .dmg</p>
-          <a class="btn" data-asset="mac" href="#">
+          <p class="req">Apple Silicon(M1 이상) · macOS 13 이상</p>
+          <p class="how"><b>권장 — 터미널에 붙여넣기</b> (보안 경고 없이 설치·실행. 터미널은 Spotlight 에서 &lsquo;터미널&rsquo;)</p>
+          <div class="cmd"><code>curl -fsSL https://lhk228.github.io/maestro-download/install.sh | zsh</code><button type="button" data-copy>복사</button></div>
+          <p class="or">또는 설치 파일(.dmg) 직접 받기</p>
+          <a class="btn ghost" data-asset="mac" href="#">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
             macOS 용 다운로드 <small data-size="mac"></small>
           </a>
@@ -368,8 +377,11 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10 4.5v7H3v-6Zm8-1.2L21 3v8.5H11V4.3ZM3 12.5h7v7L3 18.5v-6Zm8 0h10V21l-10-1.4v-7.1Z"/></svg>
             <h3>Windows</h3><span class="here">이 컴퓨터</span>
           </header>
-          <p class="req">Windows 10 · 11 (64비트) · .exe — 브라우저가 막으면 '유지'·'계속'을 눌러 받으세요</p>
-          <a class="btn" data-asset="win" href="#">
+          <p class="req">Windows 10 · 11 (64비트)</p>
+          <p class="how"><b>권장 — PowerShell 에 붙여넣기</b> (다운로드 차단·PC 보호 창 없이. 시작 메뉴에서 &lsquo;PowerShell&rsquo;)</p>
+          <div class="cmd"><code>irm https://lhk228.github.io/maestro-download/install.ps1 | iex</code><button type="button" data-copy>복사</button></div>
+          <p class="or">또는 설치 파일(.exe) 직접 받기 — 브라우저가 막으면 &lsquo;유지&rsquo;·&lsquo;계속&rsquo;</p>
+          <a class="btn ghost" data-asset="win" href="#">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
             Windows 용 다운로드 <small data-size="win"></small>
           </a>
@@ -400,11 +412,12 @@
       </details>
       <details>
         <summary>macOS 에서 "확인되지 않은 개발자" 라며 열리지 않아요</summary>
-        <p>Apple 공증을 받지 않은 앱이라 처음 한 번은 직접 허락해야 합니다. 경고 창에서 '완료'를 누르고(휴지통으로 옮기지 마세요), Maestro 를 <b>응용 프로그램 폴더로 옮긴 뒤</b> 한 번 실행합니다. 그다음 시스템 설정 → 개인정보 보호 및 보안 맨 아래의 '그래도 열기'를 누르면 됩니다. 앱을 한 번 허락하면 첫 설치 창까지 그대로 이어집니다. 터미널이 편하면 <code>xattr -dr com.apple.quarantine /Applications/Maestro.app</code> 한 줄로도 풀립니다.</p>
+        <p><b>가장 쉬운 방법은 위 다운로드 칸의 &lsquo;터미널에 붙여넣기&rsquo; 한 줄입니다</b> — 터미널로 받으면 이 경고 자체가 뜨지 않습니다. &lsquo;그래도 열기&rsquo;를 눌러도 반응이 없는 맥(회사 관리 맥 등)도 이 방법으로 설치됩니다.</p>
+        <p>Apple 공증을 받지 않은 앱이라, 설치 파일을 브라우저로 받으면 처음 한 번은 직접 허락해야 합니다. 경고 창에서 '완료'를 누르고(휴지통으로 옮기지 마세요), Maestro 를 <b>응용 프로그램 폴더로 옮긴 뒤</b> 한 번 실행합니다. 그다음 시스템 설정 → 개인정보 보호 및 보안 맨 아래의 '그래도 열기'를 누르면 됩니다. 앱을 한 번 허락하면 첫 설치 창까지 그대로 이어집니다. 터미널이 편하면 <code>xattr -dr com.apple.quarantine /Applications/Maestro.app</code> 한 줄로도 풀립니다.</p>
       </details>
       <details>
         <summary>Windows 에서 다운로드가 막히거나 "PC 보호" 창이 떠요</summary>
-        <p>서명하지 않은 설치 파일이라 처음엔 브라우저와 Windows 가 한 번씩 막습니다.</p>
+        <p><b>위 다운로드 칸의 &lsquo;PowerShell 에 붙여넣기&rsquo; 한 줄로 설치하면 이 단계가 모두 없습니다.</b> 브라우저로 받으면 서명하지 않은 설치 파일이라 처음엔 브라우저와 Windows 가 한 번씩 막습니다.</p>
         <p><b>Chrome</b> — 다운로드 목록의 경고에서 '계속'(또는 '다운로드')을 누릅니다. <b>Edge</b> — 다운로드 창에서 파일 옆 '…' → '유지' → '자세히 표시' → '그래도 유지'를 누릅니다.</p>
         <p>설치 파일을 열 때 "Windows의 PC 보호" 창이 뜨면 '추가 정보' → '실행'을 누르면 설치가 이어집니다.</p>
       </details>
@@ -440,8 +453,8 @@
   if (os) {
     document.querySelector(`.os[data-os="${os}"]`).classList.add("mine");
     const primary = document.querySelector("[data-primary]");
-    primary.href = latest(ASSETS[os]);
-    document.querySelector("[data-primary-label]").textContent = os === "mac" ? "macOS 용 다운로드" : "Windows 용 다운로드";
+    // 첫 화면 버튼은 다운로드 칸으로 — 경고 없는 '한 줄 설치'를 먼저 보게
+    document.querySelector("[data-primary-label]").textContent = os === "mac" ? "macOS 에 설치" : "Windows 에 설치";
   }
 
   // 버전·용량·날짜 — 못 읽으면 기본 문구 그대로
@@ -476,6 +489,16 @@
       if (mine) document.querySelector("[data-meta]").textContent = `${rel.tag_name} · ${mb(mine.size)} · 설치 후 Claude 또는 ChatGPT 계정으로 로그인`;
     })
     .catch(() => {});
+
+  // 설치 명령 복사
+  for (const b of document.querySelectorAll("[data-copy]")) {
+    b.addEventListener("click", async () => {
+      const text = b.previousElementSibling.textContent;
+      try { await navigator.clipboard.writeText(text); } catch { const r = document.createRange(); r.selectNodeContents(b.previousElementSibling); getSelection().removeAllRanges(); getSelection().addRange(r); }
+      b.textContent = "복사됨";
+      setTimeout(() => (b.textContent = "복사"), 1600);
+    });
+  }
 
   // 스크롤하면 스르르 나타나기
   const io = new IntersectionObserver((entries) => {
