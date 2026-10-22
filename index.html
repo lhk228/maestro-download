@@ -379,7 +379,7 @@
           </header>
           <p class="req">Windows 10 · 11 (64비트)</p>
           <p class="how"><b>권장 — PowerShell 에 붙여넣기</b> (다운로드 차단·PC 보호 창 없이. 시작 메뉴에서 &lsquo;PowerShell&rsquo;)</p>
-          <div class="cmd"><code>irm https://lhk228.github.io/maestro-download/install.ps1 | iex</code><button type="button" data-copy>복사</button></div>
+          <div class="cmd"><code>iex ((New-Object Net.WebClient).DownloadString('https://lhk228.github.io/maestro-download/install.ps1'))</code><button type="button" data-copy>복사</button></div>
           <p class="or">또는 설치 파일(.exe) 직접 받기 — 브라우저가 막으면 &lsquo;유지&rsquo;·&lsquo;계속&rsquo;</p>
           <a class="btn ghost" data-asset="win" href="#">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
