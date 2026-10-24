@@ -1,0 +1,74 @@
+<!doctype html>
+<!-- 마에스트로 연결 앱 — 폰 홈 화면에 한 번 설치. PC 의 '휴대폰으로 열기' QR 을 찍으면 그날 터널로 로그인된 채 들어간다.
+     터널 주소는 켤 때마다 바뀐다(보안). 마지막 주소를 기억해 두고, 아직 살아 있으면 바로 이어서 연다 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>마에스트로</title>
+<meta name="theme-color" content="#070b1a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="마에스트로" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<style>
+  :root { --bg: #070b1a; --ink: #eef1ff; --muted: #a4acc8; --faint: #6c7493; --c1: #6366f1; --c2: #8b5cf6; --bad: #f87171; --ease: cubic-bezier(.2,.8,.2,1); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; -webkit-font-smoothing: antialiased; word-break: keep-all; }
+  body { min-height: 100dvh; display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px); }
+  .aurora { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .aurora i { position: absolute; width: 90vmax; height: 90vmax; border-radius: 50%; filter: blur(70px); opacity: .38; }
+  .aurora i:nth-child(1) { background: radial-gradient(circle, var(--c1), transparent 62%); left: -40vmax; top: -40vmax; }
+  .aurora i:nth-child(2) { background: radial-gradient(circle, var(--c2), transparent 62%); right: -45vmax; bottom: -45vmax; }
+  main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; }
+  .logo { width: 84px; height: 84px; border-radius: 22px; box-shadow: 0 14px 40px -12px color-mix(in srgb, var(--c2) 60%, transparent); }
+  .word { margin: 4px 0 0; padding-left: .5em; font-size: 15px; font-weight: 600; letter-spacing: .5em; opacity: .92; }
+  .hint { margin: 6px 0 10px; font-size: 13px; line-height: 1.6; color: var(--muted); max-width: 300px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: min(320px, 100%); height: 52px; border: 0; border-radius: 14px; font: inherit; font-size: 16px; font-weight: 600; color: #fff; background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: 0 14px 30px -14px var(--c2); cursor: pointer; transition: transform .2s var(--ease), opacity .2s; }
+  .btn:active { transform: scale(.98); }
+  .btn.ghost { background: rgb(255 255 255 / .07); box-shadow: none; color: var(--ink); font-weight: 500; }
+  .btn[hidden] { display: none; }
+  .last { font-size: 11.5px; color: var(--faint); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg { min-height: 20px; font-size: 13px; color: var(--muted); transition: opacity .2s; }
+  .msg.bad { color: var(--bad); }
+  footer { position: relative; z-index: 1; text-align: center; font-size: 11px; color: var(--faint); }
+  /* 카메라 */
+  .scan { position: fixed; inset: 0; z-index: 10; background: #000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity .25s var(--ease); }
+  .scan.on { opacity: 1; pointer-events: auto; }
+  .scan video { flex: 1; width: 100%; object-fit: cover; }
+  .frame { position: absolute; left: 50%; top: 45%; width: min(68vw, 280px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 22px; box-shadow: 0 0 0 100vmax rgb(0 0 0 / .45); outline: 2px solid rgb(255 255 255 / .85); }
+  .scan .bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 24px calc(env(safe-area-inset-bottom) + 22px); display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(transparent, rgb(0 0 0 / .7) 35%); }
+  .scan .bar p { margin: 0; font-size: 14px; color: #fff; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i></i><i></i></div>
+<main>
+  <img class="logo" src="icon-192.png" alt="" width="84" height="84" />
+  <h1 class="word">MAESTRO</h1>
+  <p class="hint" id="hint">PC 의 마에스트로 → 설정 → <b>휴대폰으로 열기</b>에 뜬 QR 을 찍으면 로그인된 채로 연결됩니다.</p>
+  <button class="btn" id="resume" hidden>이어서 열기</button>
+  <button class="btn" id="scan">QR 찍어서 연결</button>
+  <div class="last" id="last"></div>
+  <div class="msg" id="msg" role="status"></div>
+</main>
+<footer>© 2026 hklee</footer>
+
+<div class="scan" id="scanner" aria-hidden="true">
+  <video id="video" playsinline muted></video>
+  <div class="frame" aria-hidden="true"></div>
+  <div class="bar">
+    <p>PC 화면의 QR 을 네모 안에 맞추세요</p>
+    <button class="btn ghost" id="cancel">닫기</button>
+  </div>
+</div>
+<canvas id="canvas" hidden></canvas>
+
+<script src="jsQR.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
