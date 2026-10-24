@@ -219,6 +219,17 @@
   .reveal { opacity: 0; transform: translateY(18px); transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out); }
   .reveal.in { opacity: 1; transform: none; }
 
+  /* 폰 앱 — PC 마에스트로에 붙어 도는 리모컨 */
+  .need { display: inline-flex; align-items: center; gap: 8px; margin: 18px auto 0; padding: 8px 14px; border-radius: 999px; background: var(--accent-bg); color: var(--ink); font-size: 13.5px; font-weight: 600; }
+  .need svg { width: 16px; height: 16px; color: var(--accent); flex: none; }
+  .flow { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 26px 0 4px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .flow span { padding: 8px 14px; border-radius: 12px; background: rgb(255 255 255 / 0.05); }
+  .flow b { color: var(--ink); }
+  .flow i { font-style: normal; color: var(--faint); }
+  [data-app-pc][hidden] { display: none; }
+  @media (max-width: 560px) { .flow { flex-direction: column; gap: 6px; } }
+  .os ol { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.7; color: var(--muted); }
+  .os ol b { color: var(--ink); }
   @media (max-width: 880px) {
     nav { display: none; }
     .grid, .steps { grid-template-columns: 1fr; }
@@ -244,6 +255,7 @@
       <a href="#features">기능</a>
       <a href="#engines">AI 엔진</a>
       <a href="#download">다운로드</a>
+      <a href="#mobile">폰 앱</a>
       <a href="#faq">자주 묻는 것</a>
     </nav>
   </div>
@@ -398,6 +410,64 @@
     </div>
   </section>
 
+  <section id="mobile" class="wrap">
+    <div class="dl glass reveal">
+      <div class="eyebrow">폰 앱</div>
+      <h2>밖에서도 PC 의 마에스트로를</h2>
+      <p class="sub" style="margin:0 auto">폰 앱은 따로 도는 앱이 아니라 <b>내 PC 에서 돌고 있는 마에스트로에 붙는 리모컨</b>입니다.<br />AI 는 PC 에서 일하고, 폰에서는 진행을 보고 · 결정에 답하고 · 새 일을 맡기고 · 알림을 받습니다.</p>
+      <div class="need">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+        PC 버전 필요 — 위에서 macOS · Windows 용을 먼저 설치하세요
+      </div>
+      <div class="flow" aria-label="연결 구조">
+        <span><b>폰 앱</b></span><i>→ QR 로 연결 →</i><span><b>내 PC 의 마에스트로</b> (켜져 있어야 함)</span><i>→</i><span>Claude · ChatGPT</span>
+      </div>
+
+      <div class="dl-grid">
+        <div class="os" data-phone="android">
+          <header>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 9.48 19.44 6.3a.38.38 0 0 0-.66-.38l-1.86 3.22a11.5 11.5 0 0 0-9.84 0L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52ZM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/></svg>
+            <h3>Android</h3><span class="here">이 폰</span>
+          </header>
+          <p class="req">Chrome · 홈 화면에 앱으로 설치 (스토어 없음)</p>
+          <ol>
+            <li>폰의 Chrome 에서 아래 버튼으로 폰 앱을 엽니다</li>
+            <li><b>&lsquo;홈 화면에 설치&rsquo;</b>를 누릅니다 (안 보이면 Chrome 메뉴 ⋮ → 앱 설치)</li>
+            <li>홈 화면의 마에스트로 아이콘으로 열어 PC 의 QR 을 찍습니다</li>
+          </ol>
+          <a class="btn ghost" href="app/?install=1" data-app-link>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+            폰 앱 열기 · 설치
+          </a>
+        </div>
+        <div class="os" data-phone="ios">
+          <header>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.5 2-3.7 2.1-3.8-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.8-1-2.9-4.1ZM13.9 5.1c.7-.8 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4Z"/></svg>
+            <h3>iPhone</h3><span class="here">이 폰</span>
+          </header>
+          <p class="req">Safari · iOS 16.4 이상 (알림은 홈 화면에 추가해야 옵니다)</p>
+          <ol>
+            <li>iPhone 의 <b>Safari</b> 에서 아래 버튼으로 폰 앱을 엽니다</li>
+            <li>아래 공유 버튼 <b>⬆︎</b> → <b>&lsquo;홈 화면에 추가&rsquo;</b></li>
+            <li>홈 화면의 마에스트로 아이콘으로 열어 PC 의 QR 을 찍습니다</li>
+          </ol>
+          <a class="btn ghost" href="app/?install=1" data-app-link>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+            폰 앱 열기 · 설치
+          </a>
+        </div>
+      </div>
+      <p class="sub" style="margin:14px auto 0;font-size:13px" data-app-pc hidden>지금 PC 로 보고 계십니다 — 폰에서 이 주소를 열어 주세요:</p>
+      <div class="cmd" data-app-pc hidden style="max-width:520px;margin:10px auto 0"><code>https://lhk228.github.io/maestro-download/app/</code><button type="button" data-copy>복사</button></div>
+
+      <div class="steps">
+        <div class="step"><div class="n">1</div><h4>PC 에 마에스트로</h4><p>먼저 PC 에 마에스트로를 설치하고 로그인합니다. 폰 앱은 이 PC 가 켜져 있을 때만 연결됩니다.</p></div>
+        <div class="step"><div class="n">2</div><h4>PC 에서 QR 띄우기</h4><p>PC 마에스트로 → 설정 → <b>휴대폰으로 열기</b>에서 연결을 켜면 QR 이 뜹니다. 로그인 잠금이 켜져 있어야 합니다.</p></div>
+        <div class="step"><div class="n">3</div><h4>폰 앱으로 찍기</h4><p>폰 앱에서 &lsquo;QR 찍어서 연결&rsquo;을 누르면 로그인된 채 들어갑니다. 결정 탭에서 &lsquo;폰 알림&rsquo;을 켜 두면 결정 대기를 알려 줍니다.</p></div>
+      </div>
+    </div>
+  </section>
+
   <section id="faq" class="wrap">
     <div class="reveal">
       <div class="eyebrow">자주 묻는 것</div>
@@ -422,6 +492,10 @@
         <p><b>위 다운로드 칸의 &lsquo;PowerShell 에 붙여넣기&rsquo; 한 줄로 설치하면 이 단계가 모두 없습니다.</b> 브라우저로 받으면 서명하지 않은 설치 파일이라 처음엔 브라우저와 Windows 가 한 번씩 막습니다.</p>
         <p><b>Chrome</b> — 다운로드 목록의 경고에서 '계속'(또는 '다운로드')을 누릅니다. <b>Edge</b> — 다운로드 창에서 파일 옆 '…' → '유지' → '자세히 표시' → '그래도 유지'를 누릅니다.</p>
         <p>설치 파일을 열 때 "Windows의 PC 보호" 창이 뜨면 '추가 정보' → '실행'을 누르면 설치가 이어집니다.</p>
+      </details>
+      <details>
+        <summary>폰 앱만 설치해서 쓸 수 있나요?</summary>
+        <p>아니요. 폰 앱은 내 PC 에서 돌고 있는 마에스트로에 접속하는 창입니다. AI 작업·파일·대화 기록은 모두 PC 에 있고, PC 가 꺼져 있거나 잠자기에 들어가면 폰 앱도 연결되지 않습니다(알림은 PC 가 켜져 있을 때 생긴 결정만 옵니다). PC 를 다시 켜 연결을 다시 켜면 주소가 바뀌니 QR 을 한 번 더 찍습니다.</p>
       </details>
       <details>
         <summary>업데이트는 어떻게 하나요?</summary>
@@ -451,13 +525,19 @@
 
   // 이 컴퓨터에 맞는 쪽을 강조하고, 첫 화면 버튼도 그 파일로 바로 받게 한다
   const ua = navigator.userAgent;
-  const os = /Windows/i.test(ua) ? "win" : /Macintosh|Mac OS X/i.test(ua) ? "mac" : null;
+  // 폰은 PC 칸을 강조하지 않는다 — 아이폰 UA 에도 'Mac OS X' 가 들어 있다
+  const phone = /iPhone|iPad|iPod/i.test(ua) ? "ios" : /Android/i.test(ua) ? "android" : null;
+  const os = phone ? null : /Windows/i.test(ua) ? "win" : /Macintosh|Mac OS X/i.test(ua) ? "mac" : null;
   if (os) {
     document.querySelector(`.os[data-os="${os}"]`).classList.add("mine");
     const primary = document.querySelector("[data-primary]");
     // 첫 화면 버튼은 다운로드 칸으로 — 경고 없는 '한 줄 설치'를 먼저 보게
     document.querySelector("[data-primary-label]").textContent = os === "mac" ? "macOS 에 설치" : "Windows 에 설치";
   }
+
+  // 폰 앱 — 폰이면 그 폰 칸을 강조, PC 면 '폰에서 이 주소를 여세요'를 보인다
+  if (phone) document.querySelector(`.os[data-phone="${phone}"]`).classList.add("mine");
+  else document.querySelectorAll("[data-app-pc]").forEach((el) => (el.hidden = false));
 
   // 버전·용량·날짜 — 못 읽으면 기본 문구 그대로
   const mb = (n) => `${Math.round(n / 1024 / 1024)}MB`;

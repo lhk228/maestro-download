@@ -279,11 +279,56 @@ function tick() {
   requestAnimationFrame(tick);
 }
 
+// ───────── 홈 화면에 설치 ─────────
+// 스토어 앱이 아니라 PWA — 안드로이드 Chrome 은 설치 창(beforeinstallprompt)을 띄우고, 아이폰은 Safari 공유 → 홈 화면에 추가
+
+let installEvent = null;
+
+function showInstall() {
+  if (standalone()) return;
+  const box = $("install-box");
+  const btn = $("install");
+  const hint = $("install-hint");
+  box.hidden = false;
+  if (isIos()) {
+    btn.hidden = true;
+    hint.innerHTML = /CriOS|FxiOS|EdgiOS/.test(navigator.userAgent)
+      ? "아이폰은 <b>Safari</b> 로 이 페이지를 열고, 공유 ⬆︎ → <b>홈 화면에 추가</b>를 누르세요."
+      : "아래 공유 버튼 ⬆︎ → <b>홈 화면에 추가</b>를 누르면 앱처럼 설치됩니다. 알림도 그 아이콘으로 열어야 옵니다.";
+  } else if (installEvent) {
+    btn.hidden = false;
+    hint.textContent = "설치하면 홈 화면 아이콘으로 바로 엽니다.";
+  } else {
+    btn.hidden = true;
+    hint.innerHTML = "Chrome 메뉴 ⋮ → <b>앱 설치</b>(또는 홈 화면에 추가)를 누르세요.";
+  }
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installEvent = e;
+  showInstall();
+});
+window.addEventListener("appinstalled", () => {
+  installEvent = null;
+  $("install-box").hidden = true;
+  msg("설치했습니다. 홈 화면의 마에스트로 아이콘으로 여세요.");
+});
+
 // ───────── 시작 ─────────
 
 async function boot() {
   $("scan").addEventListener("click", startScan);
   $("cancel").addEventListener("click", stopScan);
+  $("install").addEventListener("click", async () => {
+    if (!installEvent) return showInstall();
+    installEvent.prompt();
+    await installEvent.userChoice.catch(() => null);
+    installEvent = null;
+    showInstall();
+  });
+  // 설치 안 한 브라우저에서 열었으면 설치 안내 — 안드로이드는 설치 창 이벤트가 조금 늦게 오면 그때 버튼으로 바뀐다
+  showInstall();
   $("push-ok").addEventListener("click", () => void enablePush());
   $("push-no").addEventListener("click", () => {
     closePush();
