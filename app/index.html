@@ -1,10 +1,11 @@
 <!doctype html>
 <!-- 마에스트로 연결 앱 — 폰 홈 화면에 한 번 설치. PC 의 '휴대폰으로 열기' QR 을 찍으면 그날 터널로 로그인된 채 들어간다.
-     터널 주소는 켤 때마다 바뀐다(보안). 마지막 주소를 기억해 두고, 아직 살아 있으면 바로 이어서 연다 -->
+     터널 주소는 켤 때마다 바뀐다(보안). 마지막 주소를 기억해 두고, 아직 살아 있으면 바로 이어서 연다.
+     터널 화면은 이 앱 안 전체 화면 iframe 으로 연다 — 터널 주소로 이동하면 앱 범위를 벗어나 크롬이 위에 주소창·X 를 붙인다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>마에스트로</title>
 <meta name="theme-color" content="#070b1a" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -42,6 +43,10 @@
   .frame { position: absolute; left: 50%; top: 45%; width: min(68vw, 280px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 22px; box-shadow: 0 0 0 100vmax rgb(0 0 0 / .45); outline: 2px solid rgb(255 255 255 / .85); }
   .scan .bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 24px calc(env(safe-area-inset-bottom) + 22px); display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(transparent, rgb(0 0 0 / .7) 35%); }
   .scan .bar p { margin: 0; font-size: 14px; color: #fff; }
+  /* 터널 화면 — 앱 전체를 덮는다. 노치·홈 바는 iframe 안으로 전해지지 않아 바깥에서 비켜 둔다 */
+  .view { position: fixed; z-index: 20; left: 0; right: 0; top: env(safe-area-inset-top); bottom: env(safe-area-inset-bottom); width: 100%; height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom)); border: 0; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); }
+  .view.on { opacity: 1; pointer-events: auto; }
+  body.framed { overflow: hidden; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -67,6 +72,7 @@
   </div>
 </div>
 <canvas id="canvas" hidden></canvas>
+<iframe class="view" id="view" title="마에스트로" allow="camera; microphone; clipboard-read; clipboard-write; fullscreen; web-share" referrerpolicy="no-referrer"></iframe>
 
 <script src="jsQR.js"></script>
 <script src="app.js"></script>

@@ -1,6 +1,6 @@
 // 연결 앱 — 화면 파일만 저장해 두고(오프라인에서도 열리게), 나머지는 그대로 네트워크로.
 // 터널(PC) 쪽 요청은 다른 주소라 여기서 다루지 않는다
-const CACHE = "maestro-app-v1";
+const CACHE = "maestro-app-v2";
 const SHELL = ["./", "./index.html", "./app.js", "./jsQR.js", "./manifest.webmanifest", "./icon-192.png", "./apple-touch-icon.png"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
