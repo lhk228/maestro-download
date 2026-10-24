@@ -2,13 +2,15 @@
 // PC 의 QR 은 1회용 로그인 링크(…/api/login/handoff?t=…&next=/m)라, 찍으면 로그인된 채 폰 화면(/m)으로 간다.
 // 터널 화면은 이 앱 안 iframe 으로 연다(주소창 없이 앱처럼). 로그인 쿠키는 이 앱 안에서만 쓰이는 Partitioned 쿠키다.
 // 폰 푸시 알림 구독도 이 앱에 건다 — 결정 대기 알림을 누르면 이 앱이 열리고 그 화면으로 간다.
-// 브라우저가 iframe 쿠키를 막아 화면이 '준비됨'을 알리지 못하면, 다음 연결부터는 브라우저 창으로 연다(TOP).
+// 늘 앱 안(iframe)으로 연다. 준비됨이 안 오면 까닭(PC 꺼짐·QR 만료·앱 안 로그인 막힘)을 보이고 다시 찍게 한다 — 브라우저 창으로 넘기지 않는다
+// (예전엔 한 번 실패하면 'maestro.top' 을 남겨 그 뒤로 늘 주소창 있는 창으로 열었다 — 2026-10-25 걷어 냄)
 "use strict";
 
 const KEY = "maestro.origin";
-const TOP = "maestro.top";
-/** iframe 안 화면이 '준비됨'(maestro-ready)을 알려 올 때까지 기다리는 시간 */
-const READY_MS = 12000;
+/** 옛 버전이 남긴 '브라우저 창으로 열기' 표시 — 읽지 않고 지운다 */
+const OLD_TOP = "maestro.top";
+/** iframe 안 화면이 '준비됨'(maestro-ready)을 알려 올 때까지 기다리는 시간 — 터널 첫 화면은 느릴 수 있다 */
+const READY_MS = 25000;
 /** 열어 둔 동안 터널이 살아 있는지 보는 간격 — 끊기면(PC 가 터널을 다시 켜 주소가 바뀌면) 연결 화면으로 */
 const WATCH_MS = 30000;
 const $ = (id) => document.getElementById(id);
@@ -31,10 +33,6 @@ function tunnelUrl(text) {
 function go(u) {
   localStorage.setItem(KEY, u.origin);
   msg("연결하는 중…");
-  if (localStorage.getItem(TOP) === "1") {
-    location.href = u.href;
-    return;
-  }
   openView(u);
 }
 
@@ -48,12 +46,24 @@ function openView(u) {
   viewOrigin = u.origin;
   $("view").src = u.href;
   clearTimeout(readyTimer);
-  readyTimer = setTimeout(() => {
-    // 준비됨을 못 받았다 — 쿠키가 막혀 로그인 화면에 멈췄거나 화면이 안 열렸다
+  readyTimer = setTimeout(async () => {
+    // 준비됨을 못 받았다 — PC 가 꺼졌거나 화면이 아주 느리다
+    const origin = viewOrigin;
     closeView();
-    localStorage.setItem(TOP, "1");
-    msg("이 브라우저는 앱 안 연결을 막습니다. QR 을 다시 찍으면 브라우저 창으로 엽니다.", true);
+    const up = origin && (await alive(origin));
+    msg(up ? "화면이 열리지 않았습니다. PC 에서 새 QR 을 띄워 다시 찍어 주세요." : "PC 에 닿지 않습니다. PC 의 마에스트로와 '휴대폰으로 열기'가 켜져 있는지 확인하세요.", true);
   }, READY_MS);
+}
+
+/** 앱 안 화면이 로그인 화면에 멈췄다 — QR 이 만료됐거나, 이 브라우저가 앱 안 로그인(쿠키)을 남기지 않는다 */
+function loginStuck(error) {
+  closeView();
+  msg(
+    error
+      ? "QR 이 만료됐거나 이미 썼습니다. PC 에서 새 QR 을 띄워 다시 찍어 주세요."
+      : "로그인이 이 앱 안에 남지 않았습니다. PC 에서 새 QR 을 띄워 다시 찍어 주세요. 계속되면 이 브라우저가 앱 안 로그인을 막는 것입니다 — Chrome 으로 설치해 주세요.",
+    true,
+  );
 }
 
 function showView() {
@@ -90,6 +100,7 @@ window.addEventListener("message", (e) => {
   if (!viewOrigin || e.origin !== viewOrigin) return;
   const t = e.data?.type;
   if (t === "maestro-ready") showView();
+  else if (t === "maestro-login") loginStuck(e.data.error);
   else if (t === "maestro-push-state") void pushState().then(reply);
   else if (t === "maestro-push-enable" && typeof e.data.key === "string") askPush(e.data.key);
   else if (t === "maestro-push-disable") void disablePush();
@@ -318,6 +329,7 @@ window.addEventListener("appinstalled", () => {
 // ───────── 시작 ─────────
 
 async function boot() {
+  localStorage.removeItem(OLD_TOP);
   $("scan").addEventListener("click", startScan);
   $("cancel").addEventListener("click", stopScan);
   $("install").addEventListener("click", async () => {
