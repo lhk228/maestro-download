@@ -1,6 +1,7 @@
 // 마에스트로 연결 앱 — QR 로 그날의 터널(https://….trycloudflare.com)에 들어가고, 마지막 주소를 기억한다.
 // PC 의 QR 은 1회용 로그인 링크(…/api/login/handoff?t=…&next=/m)라, 찍으면 로그인된 채 폰 화면(/m)으로 간다.
 // 터널 화면은 이 앱 안 iframe 으로 연다(주소창 없이 앱처럼). 로그인 쿠키는 이 앱 안에서만 쓰이는 Partitioned 쿠키다.
+// 폰 푸시 알림 구독도 이 앱에 건다 — 결정 대기 알림을 누르면 이 앱이 열리고 그 화면으로 간다.
 // 브라우저가 iframe 쿠키를 막아 화면이 '준비됨'을 알리지 못하면, 다음 연결부터는 브라우저 창으로 연다(TOP).
 "use strict";
 
@@ -84,11 +85,126 @@ async function checkView() {
   msg("PC 와 연결이 끊겼습니다 (터널을 다시 켜면 주소가 바뀝니다). QR 을 다시 찍으세요.");
 }
 
-// 터널 화면(/m)이 그려지면 알려 온다 — 그때 덮는다. 다른 곳에서 온 메시지는 무시
+// 터널 화면(/m)이 보내는 말 — 그려졌다(ready)·알림 상태·켜기·끄기. 다른 곳에서 온 메시지는 무시
 window.addEventListener("message", (e) => {
-  if (!viewOrigin || e.origin !== viewOrigin || e.data?.type !== "maestro-ready") return;
-  showView();
+  if (!viewOrigin || e.origin !== viewOrigin) return;
+  const t = e.data?.type;
+  if (t === "maestro-ready") showView();
+  else if (t === "maestro-push-state") void pushState().then(reply);
+  else if (t === "maestro-push-enable" && typeof e.data.key === "string") askPush(e.data.key);
+  else if (t === "maestro-push-disable") void disablePush();
 });
+
+/** 알림을 누르면(서비스 워커가 알려 온다) 그 화면으로 */
+navigator.serviceWorker?.addEventListener("message", (e) => {
+  if (e.data?.type === "maestro-open") openPath(e.data.path);
+});
+
+function openPath(path) {
+  const p = typeof path === "string" && path.startsWith("/") ? path : "/m";
+  const origin = viewOrigin || localStorage.getItem(KEY);
+  if (!origin) return msg("PC 와 연결한 적이 없습니다. QR 을 찍어 연결하세요.");
+  go(new URL(p, origin));
+}
+
+// ───────── 폰 알림(푸시) ─────────
+// 구독은 이 앱(주소가 바뀌지 않는 GitHub Pages)에 건다 — PC 가 알림 서버로 바로 보내니 터널이 꺼져 있어도 온다.
+// 터널 화면이 PC 의 공개키를 주면, 여기서 권한을 묻고 구독을 만들어 돌려준다(PC 에 저장은 터널 화면이 한다)
+
+function reply(data) {
+  if (viewOrigin) $("view").contentWindow?.postMessage(data, viewOrigin);
+}
+
+const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const standalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+function deviceLabel() {
+  const ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return "iPhone";
+  if (/iPad/.test(ua) || isIos()) return "iPad";
+  const m = ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build|\))/);
+  return m ? m[1].trim() : /Android/.test(ua) ? "Android" : "휴대폰";
+}
+
+async function currentSub() {
+  if (!pushSupported()) return null;
+  const reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+async function pushState() {
+  const sub = await currentSub().catch(() => null);
+  return {
+    type: "maestro-push-state",
+    supported: pushSupported(),
+    permission: "Notification" in window ? Notification.permission : "denied",
+    standalone: standalone(),
+    ios: isIos(),
+    endpoint: sub?.endpoint ?? null,
+  };
+}
+
+const keyBytes = (b64u) => {
+  const s = atob(b64u.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b64u.length + 3) % 4));
+  return Uint8Array.from(s, (c) => c.charCodeAt(0));
+};
+const sameKey = (a, b) => a && b && a.byteLength === b.byteLength && new Uint8Array(a).every((x, i) => x === b[i]);
+
+let pushKey = null;
+
+function askPush(key) {
+  pushKey = key;
+  if (!pushSupported()) {
+    reply({ type: "maestro-push-error", message: isIos() && !standalone() ? "아이폰은 이 앱을 홈 화면에 추가해 열어야 알림을 받을 수 있습니다." : "이 브라우저는 푸시 알림을 지원하지 않습니다." });
+    return;
+  }
+  if (Notification.permission === "denied") {
+    reply({ type: "maestro-push-error", message: "알림이 차단돼 있습니다. 폰 설정 → 앱(브라우저) → 알림에서 허용해 주세요." });
+    return;
+  }
+  const sheet = $("push");
+  sheet.classList.add("on");
+  sheet.setAttribute("aria-hidden", "false");
+}
+
+function closePush() {
+  $("push").classList.remove("on");
+  $("push").setAttribute("aria-hidden", "true");
+}
+
+async function enablePush() {
+  const key = pushKey;
+  closePush();
+  if (!key) return;
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") return reply({ type: "maestro-push-error", message: "알림을 허용하지 않았습니다." });
+    const reg = await navigator.serviceWorker.ready;
+    const want = keyBytes(key);
+    let sub = await reg.pushManager.getSubscription();
+    // 다른 PC 키로 걸린 구독이면 풀고 다시
+    if (sub && !sameKey(sub.options?.applicationServerKey, want)) {
+      await sub.unsubscribe();
+      sub = null;
+    }
+    sub ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: want });
+    reply({ type: "maestro-push-subscription", subscription: sub.toJSON(), label: deviceLabel() });
+  } catch (err) {
+    reply({ type: "maestro-push-error", message: `구독하지 못했습니다 — ${err?.message || err}` });
+  }
+}
+
+async function disablePush() {
+  try {
+    const sub = await currentSub();
+    const endpoint = sub?.endpoint ?? null;
+    await sub?.unsubscribe();
+    reply({ type: "maestro-push-subscription", subscription: null, endpoint });
+  } catch (err) {
+    reply({ type: "maestro-push-error", message: `끄지 못했습니다 — ${err?.message || err}` });
+  }
+}
 // 다시 앱으로 돌아오면 바로 한 번 확인
 document.addEventListener("visibilitychange", () => void checkView());
 
@@ -168,6 +284,24 @@ function tick() {
 async function boot() {
   $("scan").addEventListener("click", startScan);
   $("cancel").addEventListener("click", stopScan);
+  $("push-ok").addEventListener("click", () => void enablePush());
+  $("push-no").addEventListener("click", () => {
+    closePush();
+    reply({ type: "maestro-push-error", message: "", cancelled: true });
+  });
+
+  // 알림을 눌러 앱이 새로 열렸다(#open=/m/…) — 지난 연결의 그 화면으로
+  const open = new URLSearchParams(location.hash.slice(1)).get("open");
+  if (open) {
+    history.replaceState(null, "", location.pathname);
+    const saved = localStorage.getItem(KEY);
+    if (saved && open.startsWith("/")) {
+      msg("여는 중…");
+      if (await alive(saved)) return go(new URL(open, saved));
+      msg("PC 와 연결이 끊겼습니다 (터널을 다시 켜면 주소가 바뀝니다). QR 을 다시 찍으세요.");
+      return;
+    }
+  }
 
   // 링크로 넘겨받은 주소(#go=…) — 폰 카메라 앱으로 이 앱 주소를 열었을 때
   const hash = new URLSearchParams(location.hash.slice(1)).get("go");
