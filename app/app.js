@@ -51,7 +51,7 @@ function openView(u) {
     const origin = viewOrigin;
     closeView();
     const up = origin && (await alive(origin));
-    msg(up ? "화면이 열리지 않았습니다. PC 에서 새 QR 을 띄워 다시 찍어 주세요." : "PC 에 닿지 않습니다. PC 의 마에스트로와 '휴대폰으로 열기'가 켜져 있는지 확인하세요.", true);
+    msg(up ? "화면이 열리지 않았어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요." : "PC에 연결할 수 없어요. PC에서 마에스트로와 '휴대폰으로 열기'가 켜져 있는지 확인해 주세요.", true);
   }, READY_MS);
 }
 
@@ -60,8 +60,8 @@ function loginStuck(error) {
   closeView();
   msg(
     error
-      ? "QR 이 만료됐거나 이미 썼습니다. PC 에서 새 QR 을 띄워 다시 찍어 주세요."
-      : "로그인이 이 앱 안에 남지 않았습니다. PC 에서 새 QR 을 띄워 다시 찍어 주세요. 계속되면 이 브라우저가 앱 안 로그인을 막는 것입니다 — Chrome 으로 설치해 주세요.",
+      ? "QR 코드가 만료됐거나 이미 사용했어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요."
+      : "이 앱에서 로그인이 유지되지 않았어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요. 계속 안 되면 Chrome으로 앱을 설치해 주세요.",
     true,
   );
 }
@@ -92,7 +92,7 @@ async function checkView() {
   if (await alive(origin)) return;
   if (origin !== viewOrigin) return;
   closeView();
-  msg("PC 와 연결이 끊겼습니다 (터널을 다시 켜면 주소가 바뀝니다). QR 을 다시 찍으세요.");
+  msg("PC와 연결이 끊겼어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.");
 }
 
 // 터널 화면(/m)이 보내는 말 — 그려졌다(ready)·알림 상태·켜기·끄기. 다른 곳에서 온 메시지는 무시
@@ -114,7 +114,7 @@ navigator.serviceWorker?.addEventListener("message", (e) => {
 function openPath(path) {
   const p = typeof path === "string" && path.startsWith("/") ? path : "/m";
   const origin = viewOrigin || localStorage.getItem(KEY);
-  if (!origin) return msg("PC 와 연결한 적이 없습니다. QR 을 찍어 연결하세요.");
+  if (!origin) return msg("아직 PC와 연결한 적이 없어요. QR 코드를 스캔해 연결해 주세요.");
   go(new URL(p, origin));
 }
 
@@ -167,11 +167,11 @@ let pushKey = null;
 function askPush(key) {
   pushKey = key;
   if (!pushSupported()) {
-    reply({ type: "maestro-push-error", message: isIos() && !standalone() ? "아이폰은 이 앱을 홈 화면에 추가해 열어야 알림을 받을 수 있습니다." : "이 브라우저는 푸시 알림을 지원하지 않습니다." });
+    reply({ type: "maestro-push-error", message: isIos() && !standalone() ? "아이폰에서는 이 앱을 홈 화면에 추가한 뒤 열어야 알림을 받을 수 있어요." : "이 브라우저에서는 알림을 받을 수 없어요." });
     return;
   }
   if (Notification.permission === "denied") {
-    reply({ type: "maestro-push-error", message: "알림이 차단돼 있습니다. 폰 설정 → 앱(브라우저) → 알림에서 허용해 주세요." });
+    reply({ type: "maestro-push-error", message: "알림이 꺼져 있어요. 폰 설정 → 앱(브라우저) → 알림에서 허용해 주세요." });
     return;
   }
   const sheet = $("push");
@@ -190,7 +190,7 @@ async function enablePush() {
   if (!key) return;
   try {
     const perm = await Notification.requestPermission();
-    if (perm !== "granted") return reply({ type: "maestro-push-error", message: "알림을 허용하지 않았습니다." });
+    if (perm !== "granted") return reply({ type: "maestro-push-error", message: "알림을 허용하지 않아서 켜지 않았어요." });
     const reg = await navigator.serviceWorker.ready;
     const want = keyBytes(key);
     let sub = await reg.pushManager.getSubscription();
@@ -202,7 +202,7 @@ async function enablePush() {
     sub ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: want });
     reply({ type: "maestro-push-subscription", subscription: sub.toJSON(), label: deviceLabel() });
   } catch (err) {
-    reply({ type: "maestro-push-error", message: `구독하지 못했습니다 — ${err?.message || err}` });
+    reply({ type: "maestro-push-error", message: `알림을 켜지 못했어요 — ${err?.message || err}` });
   }
 }
 
@@ -213,7 +213,7 @@ async function disablePush() {
     await sub?.unsubscribe();
     reply({ type: "maestro-push-subscription", subscription: null, endpoint });
   } catch (err) {
-    reply({ type: "maestro-push-error", message: `끄지 못했습니다 — ${err?.message || err}` });
+    reply({ type: "maestro-push-error", message: `알림을 끄지 못했어요 — ${err?.message || err}` });
   }
 }
 // 다시 앱으로 돌아오면 바로 한 번 확인
@@ -237,11 +237,11 @@ let scanning = false;
 
 async function startScan() {
   msg("");
-  if (!navigator.mediaDevices?.getUserMedia) return msg("이 브라우저는 카메라를 쓸 수 없습니다. 폰 카메라 앱으로 QR 을 찍어도 열립니다.", true);
+  if (!navigator.mediaDevices?.getUserMedia) return msg("이 브라우저에서는 카메라를 쓸 수 없어요. 폰 카메라 앱으로 QR 코드를 찍어도 열려요.", true);
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
   } catch {
-    return msg("카메라를 쓸 수 없습니다. 설정에서 카메라 권한을 허용하거나, 폰 카메라 앱으로 QR 을 찍으세요.", true);
+    return msg("카메라를 쓸 수 없어요. 설정에서 카메라 권한을 허용하거나 폰 카메라 앱으로 QR 코드를 찍어 주세요.", true);
   }
   const video = $("video");
   video.srcObject = stream;
@@ -283,7 +283,7 @@ function tick() {
       }
       if (Date.now() - lastWrong > 2500) {
         lastWrong = Date.now();
-        msg("마에스트로 QR 이 아닙니다. PC 설정 → 휴대폰으로 열기의 QR 을 찍으세요.", true);
+        msg("마에스트로 QR 코드가 아니에요. PC의 설정 → '휴대폰으로 열기'에 뜬 QR 코드를 스캔해 주세요.", true);
       }
     }
   }
@@ -304,14 +304,14 @@ function showInstall() {
   if (isIos()) {
     btn.hidden = true;
     hint.innerHTML = /CriOS|FxiOS|EdgiOS/.test(navigator.userAgent)
-      ? "아이폰은 <b>Safari</b> 로 이 페이지를 열고, 공유 ⬆︎ → <b>홈 화면에 추가</b>를 누르세요."
-      : "아래 공유 버튼 ⬆︎ → <b>홈 화면에 추가</b>를 누르면 앱처럼 설치됩니다. 알림도 그 아이콘으로 열어야 옵니다.";
+      ? "아이폰은 <b>Safari</b>로 이 페이지를 열고 공유 ⬆︎ → <b>홈 화면에 추가</b>를 눌러 주세요."
+      : "아래 공유 버튼 ⬆︎ → <b>홈 화면에 추가</b>를 누르면 앱처럼 설치돼요. 알림은 설치한 아이콘으로 열어야 받을 수 있어요.";
   } else if (installEvent) {
     btn.hidden = false;
-    hint.textContent = "설치하면 홈 화면 아이콘으로 바로 엽니다.";
+    hint.textContent = "설치하면 홈 화면 아이콘으로 바로 열 수 있어요.";
   } else {
     btn.hidden = true;
-    hint.innerHTML = "Chrome 메뉴 ⋮ → <b>앱 설치</b>(또는 홈 화면에 추가)를 누르세요.";
+    hint.innerHTML = "Chrome 메뉴 ⋮ → <b>앱 설치</b>(또는 홈 화면에 추가)를 눌러 주세요.";
   }
 }
 
@@ -323,7 +323,7 @@ window.addEventListener("beforeinstallprompt", (e) => {
 window.addEventListener("appinstalled", () => {
   installEvent = null;
   $("install-box").hidden = true;
-  msg("설치했습니다. 홈 화면의 마에스트로 아이콘으로 여세요.");
+  msg("설치했어요. 홈 화면의 마에스트로 아이콘으로 열어 주세요.");
 });
 
 // ───────── 시작 ─────────
@@ -355,7 +355,7 @@ async function boot() {
     if (saved && open.startsWith("/")) {
       msg("여는 중…");
       if (await alive(saved)) return go(new URL(open, saved));
-      msg("PC 와 연결이 끊겼습니다 (터널을 다시 켜면 주소가 바뀝니다). QR 을 다시 찍으세요.");
+      msg("PC와 연결이 끊겼어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.");
       return;
     }
   }
@@ -370,19 +370,18 @@ async function boot() {
 
   const saved = localStorage.getItem(KEY);
   if (!saved) return;
-  $("last").textContent = `지난 연결: ${saved.replace(/^https:\/\//, "")}`;
-  msg("지난 연결을 확인하는 중…");
+  msg("최근 연결을 확인하고 있어요…");
   if (await alive(saved)) {
-    // PC 터널이 그대로면 잠깐 뒤 저절로 이어서 연다 — 그 사이 'QR 찍어서 연결'을 누르면 멈춘다
+    // PC 터널이 그대로면 잠깐 뒤 저절로 이어서 연다 — 그 사이 'QR 코드 스캔'을 누르면 멈춘다
     const resume = $("resume");
     resume.hidden = false;
     const target = new URL(`${saved}/m`);
     resume.onclick = () => go(target);
-    msg("PC 가 켜져 있습니다. 이어서 여는 중…");
+    msg("PC가 켜져 있어요. 이어서 여는 중…");
     const timer = setTimeout(() => !scanning && go(target), 900);
     $("scan").addEventListener("click", () => clearTimeout(timer), { once: true });
   } else {
-    msg("지난 연결이 끝났습니다 (PC 에서 터널을 다시 켜면 주소가 바뀝니다). QR 을 다시 찍으세요.");
+    msg("최근 연결이 끊겼어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.");
   }
 }
 
