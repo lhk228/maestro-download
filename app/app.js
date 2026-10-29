@@ -361,7 +361,8 @@ async function boot() {
   }
 
   // 링크로 넘겨받은 주소(#go=…) — 폰 카메라 앱으로 이 앱 주소를 열었을 때
-  const hash = new URLSearchParams(location.hash.slice(1)).get("go");
+  // 카톡 메시지 버튼은 해시를 떨굴 수 있어 쿼리(?go=…)로도 받는다
+  const hash = new URLSearchParams(location.hash.slice(1)).get("go") || new URLSearchParams(location.search).get("go");
   const handed = hash && tunnelUrl(hash);
   if (handed) {
     history.replaceState(null, "", location.pathname);

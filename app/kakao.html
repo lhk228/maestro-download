@@ -1,0 +1,97 @@
+<!doctype html>
+<!-- 마에스트로 연결 앱 — 카카오 로그인이 돌아오는 고정 주소(Redirect URI).
+     카카오는 ?code=…&state=… 로 여기에 돌려보낸다. state 는 base64url(JSON {o: 터널 주소, n: nonce}) —
+     o 가 https://<이름>.trycloudflare.com 꼴일 때만 그 터널의 /api/mobile/kakao/callback 으로 그대로 넘긴다.
+     터널 주소 검사는 app.js 의 tunnelUrl() 과 같은 규칙. 외부 스크립트 없이 이 파일 하나로 동작 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="referrer" content="no-referrer" />
+<title>마에스트로</title>
+<meta name="theme-color" content="#070b1a" />
+<link rel="icon" href="icon-192.png" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<style>
+  :root { --bg: #070b1a; --ink: #eef1ff; --muted: #a4acc8; --faint: #6c7493; --c1: #6366f1; --c2: #8b5cf6; --bad: #f87171; --ease: cubic-bezier(.2,.8,.2,1); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; -webkit-font-smoothing: antialiased; word-break: keep-all; }
+  body { min-height: 100dvh; display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px); }
+  .aurora { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .aurora i { position: absolute; width: 90vmax; height: 90vmax; border-radius: 50%; filter: blur(70px); opacity: .38; }
+  .aurora i:nth-child(1) { background: radial-gradient(circle, var(--c1), transparent 62%); left: -40vmax; top: -40vmax; }
+  .aurora i:nth-child(2) { background: radial-gradient(circle, var(--c2), transparent 62%); right: -45vmax; bottom: -45vmax; }
+  main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; }
+  .logo { width: 84px; height: 84px; border-radius: 22px; box-shadow: 0 14px 40px -12px color-mix(in srgb, var(--c2) 60%, transparent); }
+  .word { margin: 4px 0 0; padding-left: .5em; font-size: 15px; font-weight: 600; letter-spacing: .5em; opacity: .92; }
+  .msg { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: var(--muted); max-width: 300px; transition: opacity .2s; }
+  .msg.bad { color: var(--bad); }
+  .btn { display: flex; align-items: center; justify-content: center; width: min(320px, 100%); height: 52px; margin-top: 10px; border-radius: 14px; font-size: 16px; font-weight: 600; color: #fff; text-decoration: none; background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: 0 14px 30px -14px var(--c2); transition: transform .2s var(--ease); }
+  .btn:active { transform: scale(.98); }
+  .btn[hidden] { display: none; }
+  footer { position: relative; z-index: 1; text-align: center; font-size: 11px; color: var(--faint); }
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i></i><i></i></div>
+<main>
+  <img class="logo" src="icon-192.png" alt="" width="84" height="84" />
+  <h1 class="word">MAESTRO</h1>
+  <p class="msg" id="msg">카카오 연결을 마무리하는 중…</p>
+  <a class="btn" id="back" href="./" hidden>앱으로 돌아가기</a>
+</main>
+<footer>© 2026 hklee</footer>
+<script>
+  // app.js 의 tunnelUrl() 과 같은 규칙 — 마에스트로가 여는 터널 주소(https, *.trycloudflare.com)만 따라간다
+  function tunnelUrl(text) {
+    try {
+      const u = new URL(String(text).trim());
+      if (u.protocol !== "https:" || !/^[a-z0-9-]+\.trycloudflare\.com$/i.test(u.hostname)) return null;
+      return u;
+    } catch {
+      return null;
+    }
+  }
+
+  /** state(base64url JSON {o, n}) → 터널 origin. 형식이 틀리거나 터널 주소가 아니면 null */
+  function originFromState(state) {
+    try {
+      let b = String(state).replace(/-/g, "+").replace(/_/g, "/");
+      while (b.length % 4) b += "=";
+      const bytes = Uint8Array.from(atob(b), (c) => c.charCodeAt(0));
+      const obj = JSON.parse(new TextDecoder().decode(bytes));
+      if (!obj || typeof obj.o !== "string" || typeof obj.n !== "string") return null;
+      const u = tunnelUrl(obj.o);
+      return u && u.origin === obj.o.replace(/\/+$/, "") ? u.origin : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function fail(text) {
+    const m = document.getElementById("msg");
+    m.textContent = text;
+    m.classList.add("bad");
+    document.getElementById("back").hidden = false;
+  }
+
+  (function () {
+    const q = new URLSearchParams(location.search);
+    const code = q.get("code");
+    const state = q.get("state");
+    // 주소창에 인가 코드가 남지 않게 지운다
+    history.replaceState(null, "", location.pathname);
+    if (q.get("error")) {
+      fail(q.get("error") === "access_denied" ? "카카오 연결을 취소했어요. 마에스트로에서 다시 눌러 주세요." : "카카오 연결에 실패했어요. 마에스트로에서 다시 눌러 주세요.");
+      return;
+    }
+    const origin = code && state && originFromState(state);
+    if (!origin) {
+      fail("연결 정보를 확인하지 못했어요. 마에스트로에서 카카오 연결을 다시 눌러 주세요.");
+      return;
+    }
+    location.replace(origin + "/api/mobile/kakao/callback?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state));
+  })();
+</script>
+</body>
+</html>
