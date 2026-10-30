@@ -30,6 +30,57 @@ function tunnelUrl(text) {
   }
 }
 
+/**
+ * 붙여넣은 글에서 마에스트로 주소를 찾는다 — 카톡 메시지 전체, 1회용 로그인 링크, 연결 앱 링크(?go=…) 모두 받는다
+ */
+function linkFrom(text) {
+  for (const raw of String(text).match(/https:\/\/[^\s"'<>]+/g) ?? []) {
+    const direct = tunnelUrl(raw);
+    if (direct) return direct;
+    try {
+      const inner = new URL(raw).searchParams.get("go");
+      const u = inner && tunnelUrl(inner);
+      if (u) return u;
+    } catch {}
+  }
+  return null;
+}
+
+/** 카톡 안 브라우저 — 여기서 열면 홈 화면 앱이 아니라 카톡 창 안에서 열린다 */
+const inKakao = () => /KAKAOTALK/i.test(navigator.userAgent);
+
+async function pasteLink() {
+  let text = "";
+  try {
+    text = await navigator.clipboard.readText();
+  } catch {}
+  // 클립보드를 못 읽으면(권한·브라우저) 직접 붙여넣게 한다
+  if (!linkFrom(text)) text = window.prompt("카톡으로 받은 링크를 붙여넣어 주세요") ?? "";
+  if (!text.trim()) return;
+  const u = linkFrom(text);
+  if (!u) return msg("마에스트로 링크가 아니에요. 카톡 '나와의 채팅'에 온 링크를 복사해 붙여넣어 주세요.", true);
+  go(u);
+}
+
+/**
+ * 카톡 버튼으로 넘어왔다 — 홈 화면 앱으로 옮겨 가게 링크를 복사해 준다(1회용 링크는 열 때 쓰이므로 복사만으로는 닳지 않는다).
+ * 앱에서 '카톡 링크 붙여넣기'를 누르면 이어진다. 카톡 창에서 그냥 써도 되게 '여기서 바로 열기'도 둔다
+ */
+function offerHandoff(u) {
+  $("handed").hidden = false;
+  $("scan").hidden = true;
+  $("hint").textContent = "홈 화면에 설치한 마에스트로 앱에서 열려면 링크를 복사한 뒤, 앱의 '카톡 링크 붙여넣기'를 눌러 주세요.";
+  $("open-here").onclick = () => go(u);
+  $("copy-go").onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(u.href);
+      msg("복사했어요. 홈 화면의 마에스트로 앱을 열고 '카톡 링크 붙여넣기'를 눌러 주세요.");
+    } catch {
+      window.prompt("이 링크를 길게 눌러 복사해 주세요", u.href);
+    }
+  };
+}
+
 function go(u) {
   localStorage.setItem(KEY, u.origin);
   msg("연결하는 중…");
@@ -332,6 +383,7 @@ async function boot() {
   localStorage.removeItem(OLD_TOP);
   $("scan").addEventListener("click", startScan);
   $("cancel").addEventListener("click", stopScan);
+  $("paste").addEventListener("click", () => void pasteLink());
   $("install").addEventListener("click", async () => {
     if (!installEvent) return showInstall();
     installEvent.prompt();
@@ -366,6 +418,8 @@ async function boot() {
   const handed = hash && tunnelUrl(hash);
   if (handed) {
     history.replaceState(null, "", location.pathname);
+    // 카톡 안에서 열렸으면 바로 열지 않고 앱으로 옮길지 고르게 한다
+    if (inKakao() && !standalone()) return offerHandoff(handed);
     return go(handed);
   }
 

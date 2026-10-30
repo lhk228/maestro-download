@@ -35,6 +35,8 @@
   .install { display: flex; flex-direction: column; align-items: center; gap: 4px; width: min(320px, 100%); }
   .install[hidden] { display: none; }
   .install .btn { width: 100%; }
+  .handed { display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(320px, 100%); }
+  .handed[hidden] { display: none; }
   .hint.small { margin: 2px 0 0; font-size: 12px; color: var(--faint); }
   .hint a { color: var(--ink); }
   .last { font-size: 11.5px; color: var(--faint); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -73,7 +75,12 @@
     <p class="hint small" id="install-hint"></p>
   </div>
   <button class="btn" id="resume" hidden>이어서 열기</button>
+  <div class="handed" id="handed" hidden>
+    <button class="btn" id="copy-go">링크 복사하고 앱에서 열기</button>
+    <button class="btn ghost" id="open-here">여기서 바로 열기</button>
+  </div>
   <button class="btn" id="scan">QR 코드 스캔</button>
+  <button class="btn ghost" id="paste">카톡 링크 붙여넣기</button>
   <div class="msg" id="msg" role="status"></div>
   <p class="hint small"><b>PC에서 마에스트로가 켜져 있어야</b> 연결할 수 있어요. <a href="../#download">PC 버전 받기</a></p>
 </main>
