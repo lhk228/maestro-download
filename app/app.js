@@ -13,6 +13,11 @@ const OLD_TOP = "maestro.top";
 const READY_MS = 25000;
 /** 열어 둔 동안 터널이 살아 있는지 보는 간격 — 끊기면(PC 가 터널을 다시 켜 주소가 바뀌면) 연결 화면으로 */
 const WATCH_MS = 30000;
+/** PC 중계 짝 정보 { topic, key } — 로그인한 터널 화면이 넘겨 준다(maestro-pair). 끊긴 뒤 PC 에 링크를 요청하는 데 쓴다 */
+const PAIR = "maestro.pair";
+const NTFY = "https://ntfy.sh";
+/** PC 답을 기다리는 시간 — PC 가 연결 주소를 새로 여는 중이면 30~40초 걸린다 */
+const RELINK_MS = 60000;
 const $ = (id) => document.getElementById(id);
 const msg = (text, bad = false) => {
   $("msg").textContent = text;
@@ -108,6 +113,7 @@ async function copyLink(u) {
 }
 
 function go(u) {
+  showRelink(false);
   localStorage.setItem(KEY, u.origin);
   msg("연결하는 중…");
   openView(u);
@@ -128,6 +134,7 @@ function openView(u) {
     const origin = viewOrigin;
     closeView();
     const up = origin && (await alive(origin));
+    if (showRelink(true)) return msg(up ? "화면이 열리지 않았어요. 아래 버튼으로 다시 연결해 주세요." : "PC와 연결이 끊겼어요. 아래 버튼으로 다시 연결해 주세요.", true);
     msg(up ? "화면이 열리지 않았어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요." : "PC에 연결할 수 없어요. PC에서 마에스트로와 '휴대폰으로 열기'가 켜져 있는지 확인해 주세요.", true);
   }, READY_MS);
 }
@@ -135,6 +142,7 @@ function openView(u) {
 /** 앱 안 화면이 로그인 화면에 멈췄다 — QR 이 만료됐거나, 이 브라우저가 앱 안 로그인(쿠키)을 남기지 않는다 */
 function loginStuck(error) {
   closeView();
+  if (showRelink(true)) return msg("로그인이 만료됐어요. 아래 버튼으로 다시 연결해 주세요.", true);
   msg(
     error
       ? "QR 코드가 만료됐거나 이미 사용했어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요."
@@ -169,7 +177,7 @@ async function checkView() {
   if (await alive(origin)) return;
   if (origin !== viewOrigin) return;
   closeView();
-  msg("PC와 연결이 끊겼어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.");
+  msg(showRelink(true) ? "PC와 연결이 끊겼어요. 아래 버튼으로 다시 연결해 주세요." : "PC와 연결이 끊겼어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.");
 }
 
 // 터널 화면(/m)이 보내는 말 — 그려졌다(ready)·알림 상태·켜기·끄기. 다른 곳에서 온 메시지는 무시
@@ -178,6 +186,7 @@ window.addEventListener("message", (e) => {
   const t = e.data?.type;
   if (t === "maestro-ready") showView();
   else if (t === "maestro-login") loginStuck(e.data.error);
+  else if (t === "maestro-pair") savePair(e.data);
   else if (t === "maestro-push-state") void pushState().then(reply);
   else if (t === "maestro-push-enable" && typeof e.data.key === "string") askPush(e.data.key);
   else if (t === "maestro-push-disable") void disablePush();
@@ -293,6 +302,112 @@ async function disablePush() {
     reply({ type: "maestro-push-error", message: `알림을 끄지 못했어요 — ${err?.message || err}` });
   }
 }
+// ───────── PC 에 다시 연결 요청 (중계) ─────────
+// 터널 주소가 바뀌면 폰은 PC 에 닿을 수 없다. PC 가 구독하는 공개 중계(ntfy.sh)의 비밀 주제에 암호화한 요청을 올리고,
+// PC 는 새 1회용 로그인 링크를 이 요청이 정한 답 주제로 돌려준다(카톡을 고르면 카톡으로). 봉투 꼴은 PC 의 src/lib/relay-crypto.ts 와 같다
+
+function readPair() {
+  try {
+    const p = JSON.parse(localStorage.getItem(PAIR) || "null");
+    return p && typeof p.topic === "string" && typeof p.key === "string" ? p : null;
+  } catch {
+    return null;
+  }
+}
+
+function savePair(d) {
+  if (typeof d?.topic !== "string" || !/^maestro-[A-Za-z0-9_-]{16,40}$/.test(d.topic)) return;
+  if (typeof d.key !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(d.key)) return;
+  localStorage.setItem(PAIR, JSON.stringify({ topic: d.topic, key: d.key }));
+}
+
+/** 끊김 화면의 '다시 연결' 버튼 — 짝 정보가 있을 때만 보인다. 보였으면 true */
+function showRelink(on) {
+  const show = on && Boolean(readPair());
+  $("relink-box").hidden = !show;
+  // 주 버튼은 하나만 — 다시 연결이 보이면 QR 스캔은 보조로
+  $("scan").classList.toggle("ghost", show);
+  return show;
+}
+
+const b64u = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const aesKey = (k) => crypto.subtle.importKey("raw", keyBytes(k), "AES-GCM", false, ["encrypt", "decrypt"]);
+
+async function seal(k, data) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await aesKey(k), new TextEncoder().encode(JSON.stringify(data))));
+  const out = new Uint8Array(12 + ct.length);
+  out.set(iv);
+  out.set(ct, 12);
+  return b64u(out);
+}
+
+async function unseal(k, blob) {
+  try {
+    const raw = keyBytes(String(blob).trim());
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: raw.subarray(0, 12) }, await aesKey(k), raw.subarray(12));
+    return JSON.parse(new TextDecoder().decode(pt));
+  } catch {
+    return null;
+  }
+}
+
+let relinking = false;
+
+async function relink(kakao) {
+  const pair = readPair();
+  if (!pair || relinking) return;
+  relinking = true;
+  $("relink").disabled = $("relink-kakao").disabled = true;
+  msg(kakao ? "PC에 카톡 링크를 요청하고 있어요…" : "PC에 연결을 요청하고 있어요…");
+  const reply = b64u(crypto.getRandomValues(new Uint8Array(18)));
+  const es = new EventSource(`${NTFY}/${reply}/sse`);
+  try {
+    const answer = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("timeout")), RELINK_MS);
+      let sent = false;
+      // 답 주제를 듣기 시작한 뒤에 요청을 올린다 — 답은 쌓아 두지 않으므로
+      es.onopen = async () => {
+        if (sent) return;
+        sent = true;
+        try {
+          const r = await fetch(`${NTFY}/${pair.topic}`, { method: "POST", body: await seal(pair.key, { t: Date.now(), r: reply, kakao }) });
+          if (!r.ok) throw new Error(String(r.status));
+        } catch (err) {
+          clearTimeout(timer);
+          reject(err);
+        }
+      };
+      es.onmessage = async (e) => {
+        let d;
+        try {
+          d = JSON.parse(e.data);
+        } catch {
+          return;
+        }
+        if (d.event !== "message") return;
+        const a = await unseal(pair.key, d.message);
+        if (!a) return;
+        clearTimeout(timer);
+        resolve(a);
+      };
+    });
+    if (answer.error) msg(answer.error, true);
+    else if (answer.kakao) msg("카톡 '나와의 채팅'으로 링크를 보냈어요. 메시지의 '휴대폰으로 열기'를 눌러 주세요.");
+    else {
+      const u = tunnelUrl(String(answer.url || ""));
+      if (u) go(u);
+      else msg("PC가 보낸 링크를 열 수 없어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.", true);
+    }
+  } catch {
+    msg("PC가 답하지 않아요. PC가 켜져 있고 마에스트로가 실행 중인지 확인해 주세요.", true);
+  } finally {
+    es.close();
+    relinking = false;
+    $("relink").disabled = $("relink-kakao").disabled = false;
+  }
+}
+
 // 다시 앱으로 돌아오면 바로 한 번 확인
 document.addEventListener("visibilitychange", () => void checkView());
 
@@ -410,6 +525,8 @@ async function boot() {
   $("scan").addEventListener("click", startScan);
   $("cancel").addEventListener("click", stopScan);
   $("paste").addEventListener("click", () => void pasteLink());
+  $("relink").addEventListener("click", () => void relink(false));
+  $("relink-kakao").addEventListener("click", () => void relink(true));
   $("install").addEventListener("click", async () => {
     if (!installEvent) return showInstall();
     installEvent.prompt();
@@ -433,7 +550,7 @@ async function boot() {
     if (saved && open.startsWith("/")) {
       msg("여는 중…");
       if (await alive(saved)) return go(new URL(open, saved));
-      msg("PC와 연결이 끊겼어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.");
+      msg(showRelink(true) ? "PC와 연결이 끊겼어요. 아래 버튼으로 다시 연결해 주세요." : "PC와 연결이 끊겼어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.");
       return;
     }
   }
@@ -462,7 +579,7 @@ async function boot() {
     const timer = setTimeout(() => !scanning && go(target), 900);
     $("scan").addEventListener("click", () => clearTimeout(timer), { once: true });
   } else {
-    msg("최근 연결이 끊겼어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.");
+    msg(showRelink(true) ? "PC와 연결이 끊겼어요. 아래 버튼으로 다시 연결해 주세요." : "최근 연결이 끊겼어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.");
   }
 }
 
