@@ -48,6 +48,18 @@ function linkFrom(text) {
 
 /** 카톡 안 브라우저 — 여기서 열면 홈 화면 앱이 아니라 카톡 창 안에서 열린다 */
 const inKakao = () => /KAKAOTALK/i.test(navigator.userAgent);
+const isAndroid = () => /Android/i.test(navigator.userAgent);
+
+/**
+ * 이 앱 주소(?go=…)를 안드로이드 인텐트로 연다 — 카톡 안 브라우저는 https 링크를 스스로 열어 버리므로 intent:// 로 넘겨야
+ * 홈 화면에 설치한 앱(WebAPK, scope 안 주소를 받는다)이 열린다. 앱이 없으면 Chrome 이 연다
+ */
+function intentUrl(u) {
+  const self = new URL(location.href);
+  self.search = `?go=${encodeURIComponent(u.href)}`;
+  self.hash = "";
+  return `intent://${self.host}${self.pathname}${self.search}#Intent;scheme=https;end`;
+}
 
 async function pasteLink() {
   let text = "";
@@ -69,16 +81,30 @@ async function pasteLink() {
 function offerHandoff(u) {
   $("handed").hidden = false;
   $("scan").hidden = true;
+  if (isAndroid()) {
+    // 1회용 링크는 앱에서 열 때 쓰이므로, 넘기기만 해서는 닳지 않는다. 넘어가지 않으면 버튼·복사로 다시
+    const open = () => location.assign(intentUrl(u));
+    $("open-app").hidden = false;
+    $("open-app").onclick = open;
+    $("copy-go").classList.add("ghost");
+    $("hint").textContent = "설치한 마에스트로 앱으로 여는 중이에요. 앱이 열리지 않으면 '앱으로 열기'를 눌러 주세요.";
+    $("open-here").onclick = () => go(u);
+    $("copy-go").onclick = () => copyLink(u);
+    open();
+    return;
+  }
   $("hint").textContent = "홈 화면에 설치한 마에스트로 앱에서 열려면 링크를 복사한 뒤, 앱의 '카톡 링크 붙여넣기'를 눌러 주세요.";
   $("open-here").onclick = () => go(u);
-  $("copy-go").onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(u.href);
-      msg("복사했어요. 홈 화면의 마에스트로 앱을 열고 '카톡 링크 붙여넣기'를 눌러 주세요.");
-    } catch {
-      window.prompt("이 링크를 길게 눌러 복사해 주세요", u.href);
-    }
-  };
+  $("copy-go").onclick = () => copyLink(u);
+}
+
+async function copyLink(u) {
+  try {
+    await navigator.clipboard.writeText(u.href);
+    msg("복사했어요. 홈 화면의 마에스트로 앱을 열고 '카톡 링크 붙여넣기'를 눌러 주세요.");
+  } catch {
+    window.prompt("이 링크를 길게 눌러 복사해 주세요", u.href);
+  }
 }
 
 function go(u) {
