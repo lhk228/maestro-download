@@ -190,7 +190,19 @@ window.addEventListener("message", (e) => {
   else if (t === "maestro-push-state") void pushState().then(reply);
   else if (t === "maestro-push-enable" && typeof e.data.key === "string") askPush(e.data.key);
   else if (t === "maestro-push-disable") void disablePush();
+  else if (t === "maestro-fullscreen") fullscreen();
 });
+
+/**
+ * 상태 표시줄·아래 내비게이션 바까지 걷어 앱이 화면 전체를 쓰게 한다. manifest 가 fullscreen 이면 이미 전체라 그대로.
+ * 'standalone' 으로 깔린 옛 설치·바로가기(브라우저 탭)는 누를 때만 청할 수 있어 손길마다 다시 청한다(뒤로 가기 제스처로 풀린다)
+ */
+function fullscreen() {
+  if (document.fullscreenElement || matchMedia("(display-mode: fullscreen)").matches) return;
+  document.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => {});
+}
+// 화면 대부분은 iframe 이라 여기 손길은 연결 화면에서만 온다 — iframe 안 손길은 /m 이 maestro-fullscreen 으로 알린다
+window.addEventListener("pointerup", fullscreen);
 
 /** 알림을 누르면(서비스 워커가 알려 온다) 그 화면으로 */
 navigator.serviceWorker?.addEventListener("message", (e) => {
