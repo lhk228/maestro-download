@@ -554,6 +554,21 @@ async function boot() {
     reply({ type: "maestro-push-error", message: "", cancelled: true });
   });
 
+  // 다른 앱의 '공유하기'로 넘겨받은 글(manifest share_target) — 그 속 주소를 지난 연결의 영상 수집함에 바로 넣는다
+  const q = new URLSearchParams(location.search);
+  const sharedLink = /https?:\/\/\S+/.exec([q.get("url"), q.get("text"), q.get("title")].filter(Boolean).join(" "))?.[0];
+  if (q.has("text") || q.has("url")) {
+    history.replaceState(null, "", location.pathname);
+    const saved = localStorage.getItem(KEY);
+    if (!sharedLink) return msg("공유한 내용에 영상 주소가 없어요. 영상의 '링크 복사'로 다시 공유해 주세요.", true);
+    if (saved) {
+      msg("수집함에 넣는 중…");
+      if (await alive(saved)) return go(new URL(`/m/inbox?add=${encodeURIComponent(sharedLink)}`, saved));
+    }
+    msg(showRelink(true) ? "PC와 연결이 끊겨 수집함에 넣지 못했어요. 다시 연결한 뒤 한 번 더 공유해 주세요." : "PC와 연결이 끊겨 수집함에 넣지 못했어요. PC에서 새 QR 코드를 띄우고 다시 스캔해 주세요.", true);
+    return;
+  }
+
   // 알림을 눌러 앱이 새로 열렸다(#open=/m/…) — 지난 연결의 그 화면으로
   const open = new URLSearchParams(location.hash.slice(1)).get("open");
   if (open) {
